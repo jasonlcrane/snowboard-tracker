@@ -149,7 +149,7 @@ export async function scrapeThreeRiversParks(
       await page.click(logoutSelector).catch(() => {
         console.log('Logout link not found, session will expire naturally');
       });
-      await page.waitForTimeout(2000); // Give it time to process
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Give it time to process
     } catch (e) {
       console.log('Logout step failed (non-critical):', e);
     }
