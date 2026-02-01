@@ -61,6 +61,12 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    console.log("--- Environment Check ---");
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? "SET (starts with " + process.env.GOOGLE_CLIENT_ID.substring(0, 5) + "...)" : "MISSING"}`);
+    console.log(`GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? "SET" : "MISSING"}`);
+    console.log(`ALLOWED_EMAILS: ${process.env.ALLOWED_EMAILS || "MISSING"}`);
+    console.log("-------------------------");
   });
 }
 
