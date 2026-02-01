@@ -1,53 +1,109 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
+import { OAuth2Client } from "google-auth-library";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
-function getQueryParam(req: Request, key: string): string | undefined {
-  const value = req.query[key];
-  return typeof value === "string" ? value : undefined;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS || "").split(",").map(e => e.trim()).filter(Boolean);
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  console.warn("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET. Google Auth will not work.");
 }
 
-export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
+const client = new OAuth2Client(
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  // We'll determine the redirect URL dynamically based on the request host to support both local and prod
+  // But strictly, it should be matched in Google Console.
+  // For now, we assume the callback path is fixed.
+  // The client needs initialization, but the redirect URI is passed in `generateAuthUrl` and `getToken`.
+);
 
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
-      return;
+export function registerOAuthRoutes(app: Express) {
+  // 1. Redirect to Google
+  app.get("/api/auth/google", (req: Request, res: Response) => {
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      return res.status(500).send("Google Auth not configured on server.");
+    }
+
+    const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/callback`;
+
+    // Create a temporary client just for generating the URL with the correct redirect URI
+    // Or we can just use the static generateAuthUrl if we update the redirectUri on the instance
+    const authorizeUrl = client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+      ],
+      redirect_uri: redirectUri
+    });
+
+    res.redirect(authorizeUrl);
+  });
+
+  // 2. Google Callback
+  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+    const code = typeof req.query.code === "string" ? req.query.code : undefined;
+
+    if (!code) {
+      return res.status(400).send("Missing code in callback");
     }
 
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/callback`;
 
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
-        return;
+      const { tokens } = await client.getToken({
+        code,
+        redirect_uri: redirectUri,
+      });
+
+      client.setCredentials(tokens);
+
+      const ticket = await client.verifyIdToken({
+        idToken: tokens.id_token!,
+        audience: GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+
+      if (!payload || !payload.sub || !payload.email) {
+        return res.status(400).send("Invalid Google ID Token payload");
       }
 
+      // Allowlist Check
+      if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(payload.email)) {
+        console.warn(`[Auth] Blocked login attempt from unauthorized email: ${payload.email}`);
+        return res.status(403).send("Access Denied: Your email is not on the allowed list.");
+      }
+
+      // Upsert User
       await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        openId: `google_${payload.sub}`, // Prefix to avoid collisions
+        name: payload.name || "Unknown",
+        email: payload.email,
+        loginMethod: "google",
         lastSignedIn: new Date(),
       });
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
+      // Create Session (Reuse SDK logic for compatibility)
+      const sessionToken = await sdk.createSessionToken(`google_${payload.sub}`, {
+        name: payload.name || "",
         expiresInMs: ONE_YEAR_MS,
       });
 
+      // Set Cookie
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.redirect("/");
+
     } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+      console.error("[OAuth] Google Login Failed:", error);
+      res.status(500).send("Authentication failed");
     }
   });
 }
