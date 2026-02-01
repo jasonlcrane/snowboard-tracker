@@ -89,11 +89,15 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date(),
       });
 
-      // Create Session (Reuse SDK logic for compatibility)
-      const sessionToken = await sdk.createSessionToken(`google_${payload.sub}`, {
-        name: payload.name || "",
-        expiresInMs: ONE_YEAR_MS,
-      });
+      // Create Session with all required fields
+      const sessionToken = await sdk.signSession(
+        {
+          openId: `google_${payload.sub}`,
+          appId: "snowboard-tracker", // App identifier for session validation
+          name: payload.name || "Unknown",
+        },
+        { expiresInMs: ONE_YEAR_MS }
+      );
 
       // Set Cookie
       const cookieOptions = getSessionCookieOptions(req);
