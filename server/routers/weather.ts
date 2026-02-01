@@ -3,7 +3,7 @@ import { getBadgeInsBySeason, getActiveSeason, getWeatherRange } from '../db';
 
 export const weatherRouter = router({
     /**
-     * Get temperature analysis - shows shred days grouped by temperature ranges
+     * Get temperature analysis - shows hill days grouped by temperature ranges
      */
     getTemperatureAnalysis: publicProcedure.query(async () => {
         const season = await getActiveSeason();
@@ -29,7 +29,7 @@ export const weatherRouter = router({
             ])
         );
 
-        // Group shred days by temperature ranges
+        // Group hill days by temperature ranges
         const tempRanges = {
             '0-10°F': { count: 0, temps: [] as number[], snowfall: 0 },
             '10-20°F': { count: 0, temps: [] as number[], snowfall: 0 },

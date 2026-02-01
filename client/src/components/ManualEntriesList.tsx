@@ -41,12 +41,12 @@ export function ManualEntriesList() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Custom Shred Days</CardTitle>
-          <CardDescription>No custom shred days yet</CardDescription>
+          <CardTitle>Custom Hill Days</CardTitle>
+          <CardDescription>No custom hill days yet</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Add custom shred days using the "Add Custom Shred Day" button above
+            Add custom hill days using the "Add Custom Hill Day" button above
           </p>
         </CardContent>
       </Card>
@@ -56,8 +56,8 @@ export function ManualEntriesList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Custom Shred Days</CardTitle>
-        <CardDescription>{entries.length} custom shred day(s)</CardDescription>
+        <CardTitle>Custom Hill Days</CardTitle>
+        <CardDescription>{entries.length} custom hill day(s)</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2 max-h-96 overflow-y-auto">

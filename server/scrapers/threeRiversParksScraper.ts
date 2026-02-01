@@ -10,7 +10,7 @@ interface ScraperResult {
 }
 
 /**
- * Scrape shred history from Three Rivers Parks account
+ * Scrape hill history from Three Rivers Parks account
  */
 export async function scrapeThreeRiversParks(
   encryptedUsername: string,

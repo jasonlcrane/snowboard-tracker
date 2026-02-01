@@ -80,7 +80,7 @@ export default function Dashboard() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{seasonStats.season.name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Carter's Hill Tracker</h1>
         <p className="text-muted-foreground mt-2">
           Season started {new Date(seasonStats.season.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
@@ -92,7 +92,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Shred Days</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Hill Days</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
@@ -127,7 +127,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> Projected Shreds
+              <TrendingUp className="w-4 h-4" /> Projected Hill Days
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -181,8 +181,8 @@ export default function Dashboard() {
         {/* Weekly Bar Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Weekly Shreds</CardTitle>
-            <CardDescription>Shred day count by week</CardDescription>
+            <CardTitle>Weekly Hill Days</CardTitle>
+            <CardDescription>Hill day count by week</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -203,7 +203,7 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>Temperature Sweet Spot</CardTitle>
               <CardDescription>
-                You shred most when it's <strong>{tempAnalysis.sweetSpot}</strong>
+                You visit the hill most when it's <strong>{tempAnalysis.sweetSpot}</strong>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -215,7 +215,7 @@ export default function Dashboard() {
                   <Tooltip
                     contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}
                     formatter={(value: any, name: string) => {
-                      if (name === 'count') return [value, 'Shred Days'];
+                      if (name === 'count') return [value, 'Hill Days'];
                       if (name === 'avgTemp') return [`${value}°F`, 'Avg Temp'];
                       return [value, name];
                     }}
@@ -229,7 +229,7 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
               <p className="text-xs text-foreground/70 mt-4 text-center">
-                {tempAnalysis.withWeatherData} of {tempAnalysis.totalBadgeIns} shred days have weather data
+                {tempAnalysis.withWeatherData} of {tempAnalysis.totalBadgeIns} hill days have weather data
               </p>
             </CardContent>
           </Card>
@@ -240,7 +240,7 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Activity by Day of Week</CardTitle>
-          <CardDescription>Which days do you ski most often?</CardDescription>
+          <CardDescription>Which days do you visit the hill most often?</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
