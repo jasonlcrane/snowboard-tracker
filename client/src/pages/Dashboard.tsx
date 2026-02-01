@@ -193,6 +193,44 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+
+        {/* Temperature Sweet Spot */}
+        {tempAnalysis && tempAnalysis.ranges.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Temperature Sweet Spot</CardTitle>
+              <CardDescription>
+                You ski most when it's <strong>{tempAnalysis.sweetSpot}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={tempAnalysis.ranges}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="range" stroke="var(--muted-foreground)" />
+                  <YAxis stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}
+                    formatter={(value: any, name: string) => {
+                      if (name === 'count') return [value, 'Badge-ins'];
+                      if (name === 'avgTemp') return [`${value}°F`, 'Avg Temp'];
+                      return [value, name];
+                    }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    fill="var(--chart-2)"
+                    radius={[8, 8, 0, 0]}
+                    label={{ position: 'top', fill: 'var(--foreground)' }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+              <p className="text-xs text-foreground/70 mt-4 text-center">
+                {tempAnalysis.withWeatherData} of {tempAnalysis.totalBadgeIns} badge-ins have weather data
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Activity Frequency by Day of Week */}
