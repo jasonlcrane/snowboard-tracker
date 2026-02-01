@@ -51,7 +51,7 @@ async function backfillWeather() {
         for (const day of weatherData) {
             try {
                 await db.insert(weatherCache).values({
-                    date: day.date,
+                    date: new Date(day.date), // Convert YYYY-MM-DD string to Date object
                     tempHigh: day.tempHigh.toString(),
                     tempLow: day.tempLow.toString(),
                     snowfall: day.snowfall.toString(),
