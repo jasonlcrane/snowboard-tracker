@@ -17,6 +17,16 @@ export default function Dashboard() {
 
   const isLoading = statsLoading || weeklyLoading || dailyLoading;
 
+  // Helper to parse YYYY-MM-DD strings or UTC Date objects as local dates to avoid shift
+  const parseLocalDate = (dateVal: string | Date) => {
+    if (!dateVal) return new Date();
+    if (dateVal instanceof Date) {
+      return new Date(dateVal.getUTCFullYear(), dateVal.getUTCMonth(), dateVal.getUTCDate());
+    }
+    const [year, month, day] = dateVal.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   useEffect(() => {
     // Refresh data every 30 seconds
     const interval = setInterval(() => {
@@ -45,7 +55,7 @@ export default function Dashboard() {
   }
 
   const weeklyChartData = weeklyData?.map((w) => ({
-    week: new Date(w.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    week: parseLocalDate(w.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     count: w.count,
   })) || [];
 
@@ -53,12 +63,17 @@ export default function Dashboard() {
   const fillAllDays = () => {
     if (!seasonStats || !dailyData) return [];
 
-    const startDate = new Date(seasonStats.season.startDate);
+    const startDate = parseLocalDate(seasonStats.season.startDate);
     const today = new Date();
     const allDays: { date: string; count: number }[] = [];
 
     // Create a map of existing data
-    const dataMap = new Map(dailyData.map(d => [d.date, d.count]));
+    const dataMap = new Map(dailyData.map(d => {
+      const dateStr = d.date instanceof Date
+        ? d.date.toISOString().split('T')[0]
+        : d.date;
+      return [dateStr, d.count];
+    }));
 
     // Fill in all days
     const current = new Date(startDate);
@@ -82,7 +97,7 @@ export default function Dashboard() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Carter's Hill Tracker</h1>
         <p className="text-muted-foreground mt-2">
-          Season started {new Date(seasonStats.season.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          Season started {parseLocalDate(seasonStats.season.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
       </div>
 
@@ -247,7 +262,7 @@ export default function Dashboard() {
             <BarChart data={(() => {
               const dayCount = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
               dailyData?.forEach(d => {
-                const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
+                const dayName = parseLocalDate(d.date).toLocaleDateString('en-US', { weekday: 'short' });
                 dayCount[dayName as keyof typeof dayCount] += d.count;
               });
               return Object.entries(dayCount).map(([day, count]) => ({ day, count }));

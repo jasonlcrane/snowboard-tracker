@@ -68,11 +68,21 @@ export function ManualEntriesList() {
             >
               <div className="flex-1">
                 <p className="font-medium text-sm">
-                  {new Date(entry.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {(() => {
+                    const d = entry.date;
+                    const localDate = d instanceof Date
+                      ? new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+                      : (() => {
+                        const [year, month, day] = (d as string).split('-').map(Number);
+                        return new Date(year, month - 1, day);
+                      })();
+
+                    return localDate.toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    });
+                  })()}
                   {entry.time && ` at ${entry.time}`}
                 </p>
                 {entry.notes && (
