@@ -7,7 +7,7 @@ export function ForecastWidget() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center p-8">
+            <div className="flex items-center justify-center p-8 bg-card/10 rounded-xl border border-border/20">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
         );
@@ -15,36 +15,52 @@ export function ForecastWidget() {
 
     if (!forecast || forecast.length === 0) return null;
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const displayForecast = forecast.filter(d => d.date >= todayStr).slice(0, 7);
+
+    if (displayForecast.length === 0) return null;
+
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {forecast.map((day) => (
-                <Card key={day.date} className="bg-card/30 border-border/50 backdrop-blur-sm">
-                    <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                        <span className="text-xs font-medium text-muted-foreground">
-                            {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                        </span>
-                        <WeatherIcon condition={day.conditions} />
-                        <div className="flex flex-col">
-                            <span className="text-lg font-bold">{Math.round(day.tempHigh)}°</span>
-                            <span className="text-xs text-muted-foreground">{Math.round(day.tempLow)}°</span>
-                        </div>
-                        {day.snowProbability > 0 && (
-                            <span className="text-[10px] font-bold text-accent px-1.5 py-0.5 bg-accent/10 rounded-full">
-                                {day.snowProbability}% Snow
+        <div className="flex overflow-x-auto pb-2 gap-2 snap-x scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            {displayForecast.map((day) => {
+                const [year, month, d] = day.date.split('-').map(Number);
+                const localDate = new Date(year, month - 1, d);
+                const isToday = day.date === todayStr;
+
+                return (
+                    <Card
+                        key={day.date}
+                        className={`min-w-[90px] flex-1 snap-start bg-card/30 border-border/50 backdrop-blur-sm transition-colors ${isToday ? 'border-accent/50 bg-accent/5' : ''}`}
+                    >
+                        <CardContent className="p-3 flex flex-col items-center text-center space-y-1">
+                            <span className={`text-[10px] uppercase tracking-wider font-bold ${isToday ? 'text-accent' : 'text-muted-foreground'}`}>
+                                {isToday ? 'Today' : localDate.toLocaleDateString('en-US', { weekday: 'short' })}
                             </span>
-                        )}
-                    </CardContent>
-                </Card>
-            ))}
+                            <WeatherIcon condition={day.conditions} />
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-base font-bold">{Math.round(day.tempHigh)}°</span>
+                                <span className="text-[10px] text-muted-foreground">{Math.round(day.tempLow)}°</span>
+                            </div>
+                            {day.snowProbability > 0 && (
+                                <div className="flex items-center gap-0.5 text-[9px] font-bold text-accent whitespace-nowrap">
+                                    <CloudSnow className="w-2.5 h-2.5" />
+                                    {day.snowProbability}%
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            })}
         </div>
     );
 }
 
 function WeatherIcon({ condition }: { condition: string }) {
     const c = condition.toLowerCase();
-    if (c.includes('snow')) return <CloudSnow className="w-8 h-8 text-blue-300" />;
-    if (c.includes('rain') || c.includes('drizzle')) return <CloudRain className="w-8 h-8 text-blue-400" />;
-    if (c.includes('thunderstorm')) return <CloudLightning className="w-8 h-8 text-yellow-500" />;
-    if (c.includes('clear')) return <Sun className="w-8 h-8 text-orange-400" />;
-    return <Cloud className="w-8 h-8 text-gray-400" />;
+    const iconClass = "w-6 h-6";
+    if (c.includes('snow')) return <CloudSnow className={iconClass + " text-blue-300"} />;
+    if (c.includes('rain') || c.includes('drizzle')) return <CloudRain className={iconClass + " text-blue-400"} />;
+    if (c.includes('thunderstorm')) return <CloudLightning className={iconClass + " text-yellow-500"} />;
+    if (c.includes('clear')) return <Sun className={iconClass + " text-orange-400"} />;
+    return <Cloud className={iconClass + " text-gray-400"} />;
 }
