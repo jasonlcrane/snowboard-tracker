@@ -53,30 +53,26 @@ export default function Dashboard() {
 
     const startDate = new Date(seasonStats.season.startDate);
     const today = new Date();
-    const allDays: { date: string; count: number; dateObj: Date }[] = [];
+    const allDays: { date: string; count: number }[] = [];
 
     // Create a map of existing data
     const dataMap = new Map(dailyData.map(d => [d.date, d.count]));
 
     // Fill in all days
-    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
+    const current = new Date(startDate);
+    while (current <= today) {
+      const dateStr = current.toISOString().split('T')[0];
       allDays.push({
-        date: new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         count: dataMap.get(dateStr) || 0,
-        dateObj: new Date(d),
       });
+      current.setDate(current.getDate() + 1);
     }
 
     return allDays;
   };
 
   const dailyChartData = fillAllDays();
-
-  const cumulativeData = dailyChartData.reduce((acc, curr, idx) => {
-    const cumulative = (acc[idx - 1]?.cumulative || 0) + curr.count;
-    return [...acc, { ...curr, cumulative }];
-  }, [] as any[]);
 
   return (
     <div className="space-y-6 p-6">
@@ -195,26 +191,6 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card>
-
-        {/* Cumulative Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cumulative Progress</CardTitle>
-            <CardDescription>Total badge-ins over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={cumulativeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="date" stroke="var(--muted-foreground)" />
-                <YAxis stroke="var(--muted-foreground)" />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }} />
-                <Area type="monotone" dataKey="cumulative" fill="var(--chart-2)" stroke="var(--chart-2)" fillOpacity={0.3} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Activity Frequency by Day of Week */}
