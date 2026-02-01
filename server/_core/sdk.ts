@@ -257,36 +257,35 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
+    console.log("[Auth] Authenticating request...");
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
+
+    if (!sessionCookie) {
+      console.log("[Auth] No session cookie found");
+      throw ForbiddenError("Invalid session cookie");
+    }
+
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
+      console.log("[Auth] Session verification failed (invalid signature or expired)");
       throw ForbiddenError("Invalid session cookie");
     }
 
     const sessionUserId = session.openId;
+    console.log(`[Auth] Session valid for openId: ${sessionUserId}`);
+
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
     if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
-      }
+      console.log(`[Auth] User not found in DB for openId: ${sessionUserId}`);
+      // Legacy sync removed - we expect user to be created during OAuth callback
+      throw ForbiddenError("User not found");
     }
+
+    console.log(`[Auth] User authenticated: ${user.email} (${user.id})`);
 
     if (!user) {
       throw ForbiddenError("User not found");
