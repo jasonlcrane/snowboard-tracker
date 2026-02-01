@@ -191,6 +191,7 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
+        </Card>
       </div>
 
       {/* Activity Frequency by Day of Week */}
