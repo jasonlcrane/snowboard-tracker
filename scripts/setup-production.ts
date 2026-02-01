@@ -55,10 +55,11 @@ async function setup() {
 
         if (!activeSeason) {
             console.log("🔧 Creating default season...");
-            const seasonName = `Season ${new Date().getFullYear()}`;
-            const startDate = new Date();
-            startDate.setMonth(10); // November (0-indexed)
-            startDate.setDate(1);
+            const now = new Date();
+            // Snowboard season runs Dec-Mar, so if we're before Dec, use previous year
+            const seasonYear = now.getMonth() < 11 ? now.getFullYear() - 1 : now.getFullYear();
+            const seasonName = `Season ${seasonYear + 1}`; // e.g., "Season 2026" for 2025-2026 season
+            const startDate = new Date(seasonYear, 11, 1); // December 1st of season year
 
             await db.insert(seasons).values({
                 name: seasonName,

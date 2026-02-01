@@ -75,7 +75,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
-            <p className="text-xs text-muted-foreground mt-2">{seasonStats.stats.daysElapsed} days elapsed</p>
+            <p className="text-xs text-foreground/70 mt-2">{seasonStats.stats.daysElapsed} days elapsed</p>
           </CardContent>
         </Card>
 
@@ -87,7 +87,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{seasonStats.stats.visitRate.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-2">{seasonStats.stats.visitRatePerWeek.toFixed(1)} per week</p>
+            <p className="text-xs text-foreground/70 mt-2">{seasonStats.stats.visitRatePerWeek.toFixed(1)} per week</p>
           </CardContent>
         </Card>
 
@@ -99,7 +99,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{seasonStats.projections.remainingDays}</div>
-            <p className="text-xs text-muted-foreground mt-2">Until avg. close date</p>
+            <p className="text-xs text-foreground/70 mt-2">Until avg. close date</p>
           </CardContent>
         </Card>
 
@@ -111,7 +111,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{seasonStats.projections.average}</div>
-            <p className="text-xs text-muted-foreground mt-2">Average scenario</p>
+            <p className="text-xs text-foreground/70 mt-2">Average scenario</p>
           </CardContent>
         </Card>
       </div>
@@ -127,21 +127,21 @@ export default function Dashboard() {
             <div className="p-4 rounded-lg bg-card border border-border">
               <h3 className="font-semibold text-sm mb-2">Conservative</h3>
               <p className="text-2xl font-bold text-accent mb-2">{seasonStats.projections.conservative}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-foreground/70">
                 Close: {seasonStats.dates.conservative.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-card border border-border border-accent">
               <h3 className="font-semibold text-sm mb-2">Average (Most Likely)</h3>
               <p className="text-2xl font-bold text-accent mb-2">{seasonStats.projections.average}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-foreground/70">
                 Close: {seasonStats.dates.average.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-card border border-border">
               <h3 className="font-semibold text-sm mb-2">Optimistic</h3>
               <p className="text-2xl font-bold text-accent mb-2">{seasonStats.projections.optimistic}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-foreground/70">
                 Close: {seasonStats.dates.optimistic.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
