@@ -1,0 +1,2 @@
+ALTER TABLE `badge_ins` MODIFY COLUMN `badge_in_time` varchar(8) NOT NULL DEFAULT '';--> statement-breakpoint
+ALTER TABLE `badge_ins` ADD CONSTRAINT `badge_in_unique_idx` UNIQUE(`season_id`,`badge_in_date`,`badge_in_time`,`is_manual`);

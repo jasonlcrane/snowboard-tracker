@@ -1,6 +1,7 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
-import { addBadgeIn, getActiveSeason, addScrapingLog } from '../db';
+import { addBadgeIn, getActiveSeason, addScrapingLog, getBadgeInsBySeason } from '../db';
 import { decryptData } from '../utils';
+import { BadgeIn } from '../../drizzle/schema'; // Assuming type might be needed or just use any if not easily available
 
 interface ScraperResult {
   success: boolean;
@@ -108,28 +109,41 @@ export async function scrapeThreeRiversParks(
     console.log(`Filtered ${badgeIns.length} total badge-ins to ${filteredBadgeIns.length} within season (start: ${season.startDate})`);
     result.badgeInsFound = filteredBadgeIns.length;
 
+    // Fetch existing badge-ins for this season to avoid false "added" counts
+    const existingRecords = await getBadgeInsBySeason(season.id);
+    const existingKeySet = new Set(existingRecords.map((r: any) => `${r.badgeInDate}_${r.badgeInTime || ''}_${r.isManual}`));
+
     // Add badge-ins to database
     let addedCount = 0;
     let duplicateCount = 0;
+
     for (const badgeIn of filteredBadgeIns) {
+      const key = `${badgeIn.date}_${badgeIn.time || ''}_0`; // Scraped entries are always isManual: 0
+
+      if (existingKeySet.has(key)) {
+        duplicateCount++;
+        continue;
+      }
+
       try {
         await addBadgeIn({
           seasonId: season.id,
           badgeInDate: badgeIn.date as any,
-          badgeInTime: badgeIn.time,
+          badgeInTime: badgeIn.time || '', // Ensure no NULLs per new schema
           passType: badgeIn.passType,
           isManual: 0,
         });
         addedCount++;
+        // Add to set to prevent counting same-scrape duplicates if any
+        existingKeySet.add(key);
       } catch (error) {
-        // Even with onDuplicateKeyUpdate, we catch to be safe
-        console.warn(`Duplicate found for ${badgeIn.date} ${badgeIn.time}`);
-        duplicateCount++;
+        console.warn(`Unexpected error adding ${badgeIn.date}:`, error);
       }
     }
 
-    console.log(`Scrape finished: ${addedCount} added, ${duplicateCount} already existed.`);
+    console.log(`Scrape finished: ${addedCount} new added, ${duplicateCount} already existed.`);
     result.badgeInsAdded = addedCount;
+    result.badgeInsFound = filteredBadgeIns.length;
     result.success = true;
 
     // Log successful scrape

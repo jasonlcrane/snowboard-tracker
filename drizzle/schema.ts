@@ -30,7 +30,7 @@ export const badgeIns = mysqlTable("badge_ins", {
   id: int("id").autoincrement().primaryKey(),
   seasonId: int("season_id").notNull(),
   badgeInDate: date("badge_in_date").notNull(),
-  badgeInTime: varchar("badge_in_time", { length: 8 }),
+  badgeInTime: varchar("badge_in_time", { length: 8 }).notNull().default(''),
   passType: varchar("pass_type", { length: 64 }),
   isManual: int("is_manual").default(0).notNull(),
   notes: text("notes"),

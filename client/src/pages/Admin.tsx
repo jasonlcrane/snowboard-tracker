@@ -11,6 +11,7 @@ export default function Admin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
   const { data: credentials, isLoading: credLoading } = trpc.admin.getCredentials.useQuery();
   const { data: logs, isLoading: logsLoading } = trpc.admin.getScrapingLogs.useQuery({ limit: 50 });
@@ -149,35 +150,53 @@ export default function Admin() {
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
           ) : logs && logs.length > 0 ? (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {logs.map((log) => (
-                <div key={log.id} className="p-3 rounded-lg border border-border bg-card">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        {log.status === 'success' ? (
-                          <Check className="w-4 h-4 text-green-500" />
-                        ) : log.status === 'failed' ? (
-                          <X className="w-4 h-4 text-red-500" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full bg-yellow-500" />
-                        )}
-                        <span className="font-medium text-sm capitalize">{log.status}</span>
+            <div className="space-y-3">
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                {(showAllLogs ? logs : logs.slice(0, 1)).map((log) => (
+                  <div key={log.id} className={`p-3 rounded-lg border border-border bg-card transition-all ${!showAllLogs ? 'ring-2 ring-accent/20' : ''}`}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          {log.status === 'success' ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : log.status === 'failed' ? (
+                            <X className="w-4 h-4 text-red-500" />
+                          ) : (
+                            <div className="w-4 h-4 rounded-full bg-yellow-500" />
+                          )}
+                          <span className="font-medium text-sm capitalize">{log.status}</span>
+                          {!showAllLogs && logs.length > 1 && (
+                            <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Latest</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </p>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{log.badgeInsAdded} added</p>
+                        <p className="text-xs text-muted-foreground">{log.badgeInsFound} found</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{log.badgeInsAdded} added</p>
-                      <p className="text-xs text-muted-foreground">{log.badgeInsFound} found</p>
-                    </div>
+                    {log.errorMessage && (
+                      <p className="text-xs text-red-500 mt-2">{log.errorMessage}</p>
+                    )}
                   </div>
-                  {log.errorMessage && (
-                    <p className="text-xs text-red-500 mt-2">{log.errorMessage}</p>
-                  )}
+                ))}
+              </div>
+
+              {logs.length > 1 && (
+                <div className="flex justify-center pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllLogs(!showAllLogs)}
+                    className="text-xs text-muted-foreground hover:text-accent"
+                  >
+                    {showAllLogs ? 'Hide historical logs' : `Show ${logs.length - 1} more logs`}
+                  </Button>
                 </div>
-              ))}
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground py-8 text-center">No scraping logs yet</p>

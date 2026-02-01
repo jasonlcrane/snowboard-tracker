@@ -110,7 +110,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
-            <p className="text-xs text-foreground/70 mt-2">{seasonStats.stats.daysElapsed} days elapsed</p>
+            <p className="text-xs text-muted-foreground mt-2">{seasonStats.stats.daysElapsed} days elapsed</p>
           </CardContent>
         </Card>
 
@@ -122,7 +122,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.projections.average}</div>
-            <p className="text-xs text-foreground/70 mt-2">Average scenario</p>
+            <p className="text-xs text-muted-foreground mt-2">Average scenario</p>
           </CardContent>
         </Card>
 
@@ -134,7 +134,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.stats.visitRate.toFixed(2)}</div>
-            <p className="text-xs text-foreground/70 mt-2">{seasonStats.stats.visitRatePerWeek.toFixed(1)} per week</p>
+            <p className="text-xs text-muted-foreground mt-2">{seasonStats.stats.visitRatePerWeek.toFixed(1)} per week</p>
           </CardContent>
         </Card>
 
@@ -146,7 +146,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.projections.remainingDays}</div>
-            <p className="text-xs text-foreground/70 mt-2">Until avg. close date</p>
+            <p className="text-xs text-muted-foreground mt-2">Until avg. close date</p>
           </CardContent>
         </Card>
       </div>
@@ -160,23 +160,23 @@ export default function Dashboard() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-card border border-border">
-              <h3 className="font-semibold text-sm mb-2 text-foreground/80">Conservative</h3>
+              <h3 className="font-semibold text-sm mb-2 text-foreground/90">Conservative</h3>
               <p className="text-3xl font-bold mb-2">{seasonStats.projections.conservative}</p>
-              <p className="text-xs text-foreground/80">
+              <p className="text-xs text-muted-foreground">
                 Close: {seasonStats.dates.conservative.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-card border border-border border-accent">
-              <h3 className="font-semibold text-sm mb-2 text-foreground/80">Average (Most Likely)</h3>
+              <h3 className="font-semibold text-sm mb-2 text-foreground/90">Average (Most Likely)</h3>
               <p className="text-3xl font-bold mb-2">{seasonStats.projections.average}</p>
-              <p className="text-xs text-foreground/80">
+              <p className="text-xs text-muted-foreground">
                 Close: {seasonStats.dates.average.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-card border border-border">
-              <h3 className="font-semibold text-sm mb-2 text-foreground/80">Optimistic</h3>
+              <h3 className="font-semibold text-sm mb-2 text-foreground/90">Optimistic</h3>
               <p className="text-3xl font-bold mb-2">{seasonStats.projections.optimistic}</p>
-              <p className="text-xs text-foreground/80">
+              <p className="text-xs text-muted-foreground">
                 Close: {seasonStats.dates.optimistic.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
@@ -185,7 +185,7 @@ export default function Dashboard() {
       </Card>
 
       {/* Tracking Note */}
-      <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex gap-3 text-sm text-foreground/80">
+      <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex gap-3 text-sm text-foreground/90">
         <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0 mt-0.5">
           ℹ️
         </div>
