@@ -98,9 +98,19 @@ export async function scrapeThreeRiversParks(
       throw new Error('No active season found');
     }
 
+    // Filter badge-ins to only include those within the season date range
+    const seasonStartDate = new Date(season.startDate);
+    const filteredBadgeIns = badgeIns.filter(badgeIn => {
+      const badgeInDate = new Date(badgeIn.date);
+      return badgeInDate >= seasonStartDate;
+    });
+
+    console.log(`Filtered ${badgeIns.length} total badge-ins to ${filteredBadgeIns.length} within season (start: ${season.startDate})`);
+    result.badgeInsFound = filteredBadgeIns.length;
+
     // Add badge-ins to database
     let addedCount = 0;
-    for (const badgeIn of badgeIns) {
+    for (const badgeIn of filteredBadgeIns) {
       try {
         // Check if already exists
         await addBadgeIn({
