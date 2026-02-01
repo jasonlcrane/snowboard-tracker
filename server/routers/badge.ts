@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../_core/trpc';
-import { getBadgeInsBySeason, getActiveSeason, getLatestProjection } from '../db';
+import { getBadgeInsBySeason, getActiveSeason, getLatestProjection, getDb } from '../db';
+import { badgeIns, weatherCache } from '../../drizzle/schema';
+import { eq, desc } from 'drizzle-orm';
 import { calculateProjections, estimateSeasonEndDates, getWeeklyCounts, getDailyCounts } from '../utils';
 
 export const badgeRouter = router({
@@ -89,15 +91,26 @@ export const badgeRouter = router({
   }),
 
   getAllBadgeIns: publicProcedure.query(async () => {
+    const db = await getDb();
     const season = await getActiveSeason();
-    if (!season) return [];
+    if (!season || !db) return [];
 
-    const badgeIns = await getBadgeInsBySeason(season.id);
-    return badgeIns.sort((a, b) => {
-      const dateA = new Date(a.badgeInDate).getTime();
-      const dateB = new Date(b.badgeInDate).getTime();
-      return dateB - dateA;
-    });
+    const badgeInsWithWeather = await db.select({
+      id: badgeIns.id,
+      badgeInDate: badgeIns.badgeInDate,
+      badgeInTime: badgeIns.badgeInTime,
+      passType: badgeIns.passType,
+      isManual: badgeIns.isManual,
+      notes: badgeIns.notes,
+      tempHigh: weatherCache.tempHigh,
+      conditions: weatherCache.conditions,
+    })
+      .from(badgeIns)
+      .leftJoin(weatherCache, eq(badgeIns.badgeInDate, weatherCache.date))
+      .where(eq(badgeIns.seasonId, season.id))
+      .orderBy(desc(badgeIns.badgeInDate));
+
+    return badgeInsWithWeather;
   }),
 
   getProjectionHistory: publicProcedure.query(async () => {

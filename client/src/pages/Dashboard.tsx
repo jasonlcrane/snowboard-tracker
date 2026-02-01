@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Loader2, TrendingUp, Calendar, Zap } from 'lucide-react';
 import { ManualEntryDialog } from '@/components/ManualEntryDialog';
-import { ManualEntriesList } from '@/components/ManualEntriesList';
 import { ForecastWidget } from '@/components/ForecastWidget';
+import { Link } from 'wouter';
 
 export default function Dashboard() {
   const utils = trpc.useUtils();
@@ -97,13 +97,32 @@ export default function Dashboard() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="relative overflow-hidden group">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Hill Days</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground flex justify-between items-center">
+              Total Hill Days
+              <Link href="/history">
+                <span className="text-[10px] uppercase tracking-wider text-accent hover:underline cursor-pointer">
+                  (View All)
+                </span>
+              </Link>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
             <p className="text-xs text-foreground/70 mt-2">{seasonStats.stats.daysElapsed} days elapsed</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" /> Projected Hill Days
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">{seasonStats.projections.average}</div>
+            <p className="text-xs text-foreground/70 mt-2">Average scenario</p>
           </CardContent>
         </Card>
 
@@ -122,24 +141,12 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Calendar className="w-4 h-4" /> Days Remaining
+              <Calendar className="w-4 h-4" /> Estimated Days Remaining
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.projections.remainingDays}</div>
             <p className="text-xs text-foreground/70 mt-2">Until avg. close date</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> Projected Hill Days
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">{seasonStats.projections.average}</div>
-            <p className="text-xs text-foreground/70 mt-2">Average scenario</p>
           </CardContent>
         </Card>
       </div>
@@ -177,10 +184,14 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Manual Entry Section */}
-      <div className="space-y-4">
-        <ManualEntryDialog />
-        <ManualEntriesList />
+      {/* Tracking Note */}
+      <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex gap-3 text-sm text-foreground/80">
+        <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0 mt-0.5">
+          ℹ️
+        </div>
+        <p>
+          <strong>Hyland Hills</strong> visits are tracked automatically overnight. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
+        </p>
       </div>
 
       {/* Charts */}

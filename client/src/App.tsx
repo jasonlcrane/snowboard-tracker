@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
+import HistoryPage from "./pages/HistoryPage";
 import Admin from "./pages/Admin";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Header } from "./components/Header";
@@ -16,6 +17,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={() => (user ? <Dashboard /> : <LandingPage />)} />
+      <Route path="/history" component={() => (user ? <HistoryPage /> : <LandingPage />)} />
       <Route path="/admin" component={() => (user?.role === 'admin' ? <Admin /> : <NotFound />)} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
