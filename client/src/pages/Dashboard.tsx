@@ -12,6 +12,7 @@ export default function Dashboard() {
   const { data: weeklyData, isLoading: weeklyLoading } = trpc.badge.getWeeklyBreakdown.useQuery();
   const { data: dailyData, isLoading: dailyLoading } = trpc.badge.getDailyBreakdown.useQuery();
   const { data: manualEntries } = trpc.manual.getManualEntries.useQuery();
+  const { data: tempAnalysis } = trpc.weather.getTemperatureAnalysis.useQuery();
 
   const isLoading = statsLoading || weeklyLoading || dailyLoading;
 
