@@ -89,7 +89,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Badge-Ins</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Shred Days</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
@@ -124,7 +124,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> Projected Total
+              <TrendingUp className="w-4 h-4" /> Projected Shreds
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -178,8 +178,8 @@ export default function Dashboard() {
         {/* Weekly Bar Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Weekly Badge-Ins</CardTitle>
-            <CardDescription>Badge-in count by week</CardDescription>
+            <CardTitle>Weekly Shreds</CardTitle>
+            <CardDescription>Shred day count by week</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -200,7 +200,7 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>Temperature Sweet Spot</CardTitle>
               <CardDescription>
-                You ski most when it's <strong>{tempAnalysis.sweetSpot}</strong>
+                You shred most when it's <strong>{tempAnalysis.sweetSpot}</strong>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -212,7 +212,7 @@ export default function Dashboard() {
                   <Tooltip
                     contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}
                     formatter={(value: any, name: string) => {
-                      if (name === 'count') return [value, 'Badge-ins'];
+                      if (name === 'count') return [value, 'Shred Days'];
                       if (name === 'avgTemp') return [`${value}°F`, 'Avg Temp'];
                       return [value, name];
                     }}
@@ -226,7 +226,7 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
               <p className="text-xs text-foreground/70 mt-4 text-center">
-                {tempAnalysis.withWeatherData} of {tempAnalysis.totalBadgeIns} badge-ins have weather data
+                {tempAnalysis.withWeatherData} of {tempAnalysis.totalBadgeIns} shred days have weather data
               </p>
             </CardContent>
           </Card>

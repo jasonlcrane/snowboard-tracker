@@ -39,7 +39,7 @@ export function ManualEntryDialog() {
         notes: notes || undefined,
       });
 
-      toast.success('Badge-in added successfully');
+      toast.success('Shred day added successfully');
       setDate('');
       setTime('');
       setNotes('');
@@ -51,7 +51,7 @@ export function ManualEntryDialog() {
       utils.badge.getWeeklyBreakdown.invalidate();
       utils.manual.getManualEntries.invalidate();
     } catch (error) {
-      toast.error('Failed to add badge-in');
+      toast.error('Failed to add shred day');
     }
   };
 
@@ -60,14 +60,14 @@ export function ManualEntryDialog() {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />
-          Add Manual Entry
+          Add Custom Shred Day
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Manual Badge-In</DialogTitle>
+          <DialogTitle>Add Custom Shred Day</DialogTitle>
           <DialogDescription>
-            Record a badge-in that wasn't captured by the automated scraper
+            Record a shred day that wasn't captured by the automated scraper
           </DialogDescription>
         </DialogHeader>
 
@@ -122,7 +122,7 @@ export function ManualEntryDialog() {
                   Adding...
                 </>
               ) : (
-                'Add Badge-In'
+                'Add Shred Day'
               )}
             </Button>
           </div>

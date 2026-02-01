@@ -28,7 +28,7 @@ export function ManualEntriesList() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Manual Entries</CardTitle>
+          <CardTitle>Custom Shred Days</CardTitle>
         </CardHeader>
         <CardContent>
           <Loader2 className="w-6 h-6 animate-spin" />
@@ -41,12 +41,12 @@ export function ManualEntriesList() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Manual Entries</CardTitle>
-          <CardDescription>No manual entries yet</CardDescription>
+          <CardTitle>Custom Shred Days</CardTitle>
+          <CardDescription>No custom shred days yet</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Add custom badge-ins using the "Add Manual Entry" button above
+            Add custom shred days using the "Add Custom Shred Day" button above
           </p>
         </CardContent>
       </Card>
@@ -56,8 +56,8 @@ export function ManualEntriesList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Manual Entries</CardTitle>
-        <CardDescription>{entries.length} custom badge-in(s)</CardDescription>
+        <CardTitle>Custom Shred Days</CardTitle>
+        <CardDescription>{entries.length} custom shred day(s)</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2 max-h-96 overflow-y-auto">

@@ -23,7 +23,7 @@ export default function Home() {
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <div>
               <h1 className="text-5xl font-bold tracking-tight mb-4">
-                Carter's Badge-In Tracker
+                Carter's Shred Tracker
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
                 Track snowboarding visits, analyze trends, and project season totals with real-time weather integration
@@ -38,7 +38,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    View daily, weekly, and seasonal badge-in statistics with interactive charts
+                    View daily, weekly, and seasonal shred statistics with interactive charts
                   </p>
                 </CardContent>
               </Card>
@@ -82,7 +82,7 @@ export default function Home() {
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Carter's Badge-In Tracker</h1>
+          <h1 className="text-2xl font-bold">Carter's Shred Tracker</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user?.name}</span>
             <Button variant="outline" size="sm" onClick={() => logout()}>
@@ -115,7 +115,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    See real-time badge-in data, weekly breakdowns, and projected season totals
+                    See real-time shred data, weekly breakdowns, and projected season totals
                   </p>
                 </CardContent>
               </Card>
@@ -164,7 +164,7 @@ export default function Home() {
                 <div>
                   <h4 className="font-semibold">Automatic Scraping</h4>
                   <p className="text-sm text-muted-foreground">
-                    Daily automated scrapes fetch your latest badge-in data from the Parks system
+                    Daily automated scrapes fetch your latest shred data from the Parks system
                   </p>
                 </div>
               </div>

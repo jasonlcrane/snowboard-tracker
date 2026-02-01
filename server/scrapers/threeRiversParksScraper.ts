@@ -10,7 +10,7 @@ interface ScraperResult {
 }
 
 /**
- * Scrape badge-in history from Three Rivers Parks account
+ * Scrape shred history from Three Rivers Parks account
  */
 export async function scrapeThreeRiversParks(
   encryptedUsername: string,
