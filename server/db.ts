@@ -209,16 +209,20 @@ export async function updateManualBadgeIn(id: number, data: Partial<InsertBadgeI
 }
 
 // Weather cache queries
-export async function getWeatherForDate(date: string) {
+export async function getWeatherForDate(dateStr: string) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(weatherCache).where(eq(weatherCache.date, date)).limit(1);
+  // Convert string to Date for comparison
+  const result = await db.select().from(weatherCache)
+    .where(eq(weatherCache.date, new Date(dateStr)))
+    .limit(1);
   return result[0] || null;
 }
 
 export async function getWeatherRange(startDate: string, endDate: string) {
   const db = await getDb();
   if (!db) return [];
+  // Convert strings to Dates for comparison
   return db.select().from(weatherCache)
     .where(and(
       gte(weatherCache.date, new Date(startDate)),
