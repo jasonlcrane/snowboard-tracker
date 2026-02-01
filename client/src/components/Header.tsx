@@ -16,8 +16,12 @@ export function Header() {
                 <div className="flex items-center gap-6">
                     <Link href="/">
                         <div className="flex items-center gap-3 cursor-pointer group">
-                            <img src="/logo.png" alt="Hill Days Logo" className="w-9 h-9 object-contain transition-transform group-hover:scale-110" />
-                            <h1 className="text-xl font-black tracking-tighter transition-colors group-hover:text-accent hidden sm:block">
+                            <img
+                                src="/logo.png"
+                                alt="Hill Days Logo"
+                                className="w-12 h-12 object-contain transition-all duration-300 group-hover:scale-110 group-hover:-rotate-12 group-hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                            />
+                            <h1 className="text-2xl font-black tracking-tighter hidden sm:block">
                                 Hill Days
                             </h1>
                         </div>

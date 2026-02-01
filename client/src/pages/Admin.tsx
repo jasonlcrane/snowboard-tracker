@@ -159,7 +159,7 @@ export default function Admin() {
             )}
           </Button>
           <p className="text-sm text-muted-foreground mt-3">
-            Hyland data is automatically synced daily. Use this to manually refresh.
+            Hyland data may eventually be automatically synced daily. Use this to manually refresh.
           </p>
         </CardContent>
       </Card>

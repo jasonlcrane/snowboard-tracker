@@ -190,7 +190,7 @@ export default function Dashboard() {
           ℹ️
         </div>
         <p>
-          <strong>Hyland Hills</strong> visits are tracked automatically overnight. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
+          <strong>Hyland Hills</strong> visits may eventually be tracked automatically overnight, but go to the admin page to update manually for now. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
         </p>
       </div>
 
