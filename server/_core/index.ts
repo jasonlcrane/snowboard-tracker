@@ -67,6 +67,8 @@ async function startServer() {
     console.log(`GOOGLE_CLIENT_ID: ${process.env.GOOGLE_CLIENT_ID ? "SET (starts with " + process.env.GOOGLE_CLIENT_ID.substring(0, 5) + "...)" : "MISSING"}`);
     console.log(`GOOGLE_CLIENT_SECRET: ${process.env.GOOGLE_CLIENT_SECRET ? "SET" : "MISSING"}`);
     console.log(`ALLOWED_EMAILS: ${process.env.ALLOWED_EMAILS || "MISSING"}`);
+    console.log(`JWT_SECRET: ${process.env.JWT_SECRET ? "SET (length: " + process.env.JWT_SECRET.length + ")" : "MISSING"}`);
+    console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? "SET (starts with " + process.env.DATABASE_URL.substring(0, 8) + "...)" : "MISSING"}`);
     console.log("-------------------------");
   });
 }
