@@ -62,7 +62,7 @@ async function setup() {
 
             await db.insert(seasons).values({
                 name: seasonName,
-                startDate: startDate.toISOString().split('T')[0],
+                startDate: startDate,
                 status: "active",
             });
             console.log(`✅ Created season: ${seasonName}`);
