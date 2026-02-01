@@ -1,0 +1,1 @@
+ALTER TABLE `scraping_logs` MODIFY COLUMN `status` enum('success','failed','partial','pending') NOT NULL;

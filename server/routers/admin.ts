@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../_core/trpc';
-import { getAdminCredentials, saveAdminCredentials, getScrapingLogs } from '../db';
+import { getAdminCredentials, saveAdminCredentials, getScrapingLogs, addScrapingLog } from '../db';
 import { encryptData } from '../utils';
 import { scrapeThreeRiversParks } from '../scrapers/threeRiversParksScraper';
 
@@ -74,10 +74,17 @@ export const adminRouter = router({
       throw new Error('No credentials configured');
     }
 
+    // Create a pending log entry
+    const logId = await addScrapingLog({
+      credentialId: credentials.id,
+      status: 'pending',
+    });
+
     const result = await scrapeThreeRiversParks(
       credentials.encryptedUsername,
       credentials.encryptedPassword,
-      credentials.id
+      credentials.id,
+      Number(logId)
     );
 
     if (!result.success) {

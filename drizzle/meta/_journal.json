@@ -36,6 +36,13 @@
       "when": 1769925665183,
       "tag": "0004_glamorous_spitfire",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1769927145542,
+      "tag": "0005_round_rocket_racer",
+      "breakpoints": true
     }
   ]
 }

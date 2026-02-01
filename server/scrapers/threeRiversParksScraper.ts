@@ -1,5 +1,5 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
-import { addBadgeIn, getActiveSeason, addScrapingLog, getBadgeInsBySeason } from '../db';
+import { addBadgeIn, getActiveSeason, addScrapingLog, updateScrapingLog, getBadgeInsBySeason } from '../db';
 import { decryptData } from '../utils';
 import { BadgeIn } from '../../drizzle/schema'; // Assuming type might be needed or just use any if not easily available
 
@@ -16,7 +16,8 @@ interface ScraperResult {
 export async function scrapeThreeRiversParks(
   encryptedUsername: string,
   encryptedPassword: string,
-  credentialId: number
+  credentialId: number,
+  logId?: number
 ): Promise<ScraperResult> {
   let browser: Browser | null = null;
   let result: ScraperResult = {
@@ -156,12 +157,20 @@ export async function scrapeThreeRiversParks(
 
     // Log successful scrape
     try {
-      await addScrapingLog({
-        credentialId,
-        status: 'success',
-        badgeInsFound: filteredBadgeIns.length,
-        badgeInsAdded: addedCount,
-      });
+      if (logId) {
+        await updateScrapingLog(logId, {
+          status: 'success',
+          badgeInsFound: filteredBadgeIns.length,
+          badgeInsAdded: addedCount,
+        });
+      } else {
+        await addScrapingLog({
+          credentialId,
+          status: 'success',
+          badgeInsFound: filteredBadgeIns.length,
+          badgeInsAdded: addedCount,
+        });
+      }
     } catch (e) {
       console.warn('Could not save success log to DB (normal for manual testing).');
     }
@@ -191,13 +200,20 @@ export async function scrapeThreeRiversParks(
     result.errorMessage = errorMessage;
 
     // Log failed scrape
-    await addScrapingLog({
-      credentialId,
-      status: 'failed',
-      badgeInsFound: 0,
-      badgeInsAdded: 0,
-      errorMessage,
-    });
+    if (logId) {
+      await updateScrapingLog(logId, {
+        status: 'failed',
+        errorMessage,
+      });
+    } else {
+      await addScrapingLog({
+        credentialId,
+        status: 'failed',
+        badgeInsFound: 0,
+        badgeInsAdded: 0,
+        errorMessage,
+      });
+    }
 
     return result;
   } finally {

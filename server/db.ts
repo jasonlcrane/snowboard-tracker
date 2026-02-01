@@ -61,7 +61,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (user.openId === ENV.ownerOpenId || (user.email && ENV.allowedEmails.includes(user.email))) {
       values.role = 'admin';
       updateSet.role = 'admin';
     }
@@ -175,7 +175,8 @@ export async function saveAdminCredentials(data: InsertAdminCredential) {
 export async function addScrapingLog(data: InsertScrapingLog) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(scrapingLogs).values(data);
+  const [result] = await db.insert(scrapingLogs).values(data);
+  return result.insertId;
 }
 
 export async function getScrapingLogs(credentialId: number, limit = 50) {
@@ -185,6 +186,12 @@ export async function getScrapingLogs(credentialId: number, limit = 50) {
     .where(eq(scrapingLogs.credentialId, credentialId))
     .orderBy(desc(scrapingLogs.createdAt))
     .limit(limit);
+}
+
+export async function updateScrapingLog(id: number, data: Partial<InsertScrapingLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(scrapingLogs).set(data).where(eq(scrapingLogs.id, id));
 }
 
 // Manual badge-in queries

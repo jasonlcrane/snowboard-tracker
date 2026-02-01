@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Check, X } from 'lucide-react';
+import { Loader2, Check, X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export default function Admin() {
   const [username, setUsername] = useState('');
@@ -14,9 +15,34 @@ export default function Admin() {
   const [showAllLogs, setShowAllLogs] = useState(false);
 
   const { data: credentials, isLoading: credLoading } = trpc.admin.getCredentials.useQuery();
-  const { data: logs, isLoading: logsLoading } = trpc.admin.getScrapingLogs.useQuery({ limit: 50 });
+  const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = trpc.admin.getScrapingLogs.useQuery({ limit: 50 });
   const saveCredentialsMutation = trpc.admin.saveCredentials.useMutation();
-  const triggerScrapeMutation = trpc.admin.triggerManualScrape.useMutation();
+  const triggerScrapeMutation = trpc.admin.triggerManualScrape.useMutation({
+    onMutate: () => {
+      // Optimistically refetch to show the pending log immediately
+      // The backend creates the pending log first
+      setTimeout(() => refetchLogs(), 500);
+    },
+    onSuccess: () => {
+      refetchLogs();
+    }
+  });
+
+  // Polling for pending logs
+  useEffect(() => {
+    const hasPending = logs?.some(log => log.status === 'pending');
+    let interval: NodeJS.Timeout;
+
+    if (hasPending) {
+      interval = setInterval(() => {
+        refetchLogs();
+      }, 3000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [logs, refetchLogs]);
 
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +64,9 @@ export default function Admin() {
   const handleTriggerScrape = async () => {
     try {
       await triggerScrapeMutation.mutateAsync();
-      toast.success('Scrape job queued');
+      toast.success('Hyland data download complete');
     } catch (error) {
-      toast.error('Failed to trigger scrape');
+      toast.error('Failed to trigger download');
     }
   };
 
@@ -161,10 +187,14 @@ export default function Admin() {
                             <Check className="w-4 h-4 text-green-500" />
                           ) : log.status === 'failed' ? (
                             <X className="w-4 h-4 text-red-500" />
+                          ) : log.status === 'pending' ? (
+                            <RefreshCw className="w-4 h-4 text-accent animate-spin" />
                           ) : (
                             <div className="w-4 h-4 rounded-full bg-yellow-500" />
                           )}
-                          <span className="font-medium text-sm capitalize">{log.status}</span>
+                          <span className={`font-medium text-sm capitalize ${log.status === 'pending' ? 'animate-pulse text-accent' : ''}`}>
+                            {log.status === 'pending' ? 'Syncing...' : log.status}
+                          </span>
                           {!showAllLogs && logs.length > 1 && (
                             <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Latest</span>
                           )}
@@ -174,8 +204,14 @@ export default function Admin() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium">{log.badgeInsAdded} added</p>
-                        <p className="text-xs text-muted-foreground">{log.badgeInsFound} found</p>
+                        {log.status === 'pending' ? (
+                          <p className="text-xs text-muted-foreground italic">Fetching data...</p>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium">{log.badgeInsAdded} added</p>
+                            <p className="text-xs text-muted-foreground">{log.badgeInsFound} found</p>
+                          </>
+                        )}
                       </div>
                     </div>
                     {log.errorMessage && (

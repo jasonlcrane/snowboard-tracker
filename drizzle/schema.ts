@@ -127,7 +127,7 @@ export type InsertAdminCredential = typeof adminCredentials.$inferInsert;
 export const scrapingLogs = mysqlTable("scraping_logs", {
   id: int("id").autoincrement().primaryKey(),
   credentialId: int("credential_id").notNull(),
-  status: mysqlEnum("status", ["success", "failed", "partial"]).notNull(),
+  status: mysqlEnum("status", ["success", "failed", "partial", "pending"]).notNull(),
   badgeInsFound: int("badge_ins_found").default(0),
   badgeInsAdded: int("badge_ins_added").default(0),
   errorMessage: text("error_message"),

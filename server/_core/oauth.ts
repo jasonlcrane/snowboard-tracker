@@ -4,10 +4,10 @@ import { OAuth2Client } from "google-auth-library";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS || "").split(",").map(e => e.trim()).filter(Boolean);
 
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
   console.warn("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET. Google Auth will not work.");
@@ -75,7 +75,7 @@ export function registerOAuthRoutes(app: Express) {
       }
 
       // Allowlist Check
-      if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(payload.email)) {
+      if (ENV.allowedEmails.length > 0 && !ENV.allowedEmails.includes(payload.email)) {
         console.warn(`[Auth] Blocked login attempt from unauthorized email: ${payload.email}`);
         return res.status(403).send("Access Denied: Your email is not on the allowed list.");
       }
