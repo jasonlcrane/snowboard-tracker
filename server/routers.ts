@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { badgeRouter } from "./routers/badge";
 import { adminRouter } from "./routers/admin";
 import { manualRouter } from "./routers/manual";
+import { weatherRouter } from "./routers/weather";
 
 export const appRouter = router({
   system: systemRouter,
@@ -21,6 +22,7 @@ export const appRouter = router({
   badge: badgeRouter,
   admin: adminRouter,
   manual: manualRouter,
+  weather: weatherRouter,
 });
 
 export type AppRouter = typeof appRouter;
