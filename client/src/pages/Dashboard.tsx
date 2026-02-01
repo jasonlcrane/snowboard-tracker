@@ -47,10 +47,31 @@ export default function Dashboard() {
     count: w.count,
   })) || [];
 
-  const dailyChartData = dailyData?.map((d) => ({
-    date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    count: d.count,
-  })) || [];
+  // Fill in all days from season start to today
+  const fillAllDays = () => {
+    if (!seasonStats || !dailyData) return [];
+
+    const startDate = new Date(seasonStats.season.startDate);
+    const today = new Date();
+    const allDays: { date: string; count: number; dateObj: Date }[] = [];
+
+    // Create a map of existing data
+    const dataMap = new Map(dailyData.map(d => [d.date, d.count]));
+
+    // Fill in all days
+    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      allDays.push({
+        date: new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        count: dataMap.get(dateStr) || 0,
+        dateObj: new Date(d),
+      });
+    }
+
+    return allDays;
+  };
+
+  const dailyChartData = fillAllDays();
 
   const cumulativeData = dailyChartData.reduce((acc, curr, idx) => {
     const cumulative = (acc[idx - 1]?.cumulative || 0) + curr.count;
@@ -74,7 +95,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Badge-Ins</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
+            <div className="text-4xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
             <p className="text-xs text-foreground/70 mt-2">{seasonStats.stats.daysElapsed} days elapsed</p>
           </CardContent>
         </Card>
@@ -86,7 +107,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{seasonStats.stats.visitRate.toFixed(2)}</div>
+            <div className="text-4xl font-bold">{seasonStats.stats.visitRate.toFixed(2)}</div>
             <p className="text-xs text-foreground/70 mt-2">{seasonStats.stats.visitRatePerWeek.toFixed(1)} per week</p>
           </CardContent>
         </Card>
@@ -98,7 +119,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{seasonStats.projections.remainingDays}</div>
+            <div className="text-4xl font-bold">{seasonStats.projections.remainingDays}</div>
             <p className="text-xs text-foreground/70 mt-2">Until avg. close date</p>
           </CardContent>
         </Card>
@@ -110,7 +131,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{seasonStats.projections.average}</div>
+            <div className="text-4xl font-bold">{seasonStats.projections.average}</div>
             <p className="text-xs text-foreground/70 mt-2">Average scenario</p>
           </CardContent>
         </Card>
@@ -125,23 +146,23 @@ export default function Dashboard() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-card border border-border">
-              <h3 className="font-semibold text-sm mb-2">Conservative</h3>
-              <p className="text-2xl font-bold text-accent mb-2">{seasonStats.projections.conservative}</p>
-              <p className="text-xs text-foreground/70">
+              <h3 className="font-semibold text-sm mb-2 text-foreground/80">Conservative</h3>
+              <p className="text-3xl font-bold mb-2">{seasonStats.projections.conservative}</p>
+              <p className="text-xs text-foreground/80">
                 Close: {seasonStats.dates.conservative.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-card border border-border border-accent">
-              <h3 className="font-semibold text-sm mb-2">Average (Most Likely)</h3>
-              <p className="text-2xl font-bold text-accent mb-2">{seasonStats.projections.average}</p>
-              <p className="text-xs text-foreground/70">
+              <h3 className="font-semibold text-sm mb-2 text-foreground/80">Average (Most Likely)</h3>
+              <p className="text-3xl font-bold mb-2">{seasonStats.projections.average}</p>
+              <p className="text-xs text-foreground/80">
                 Close: {seasonStats.dates.average.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-card border border-border">
-              <h3 className="font-semibold text-sm mb-2">Optimistic</h3>
-              <p className="text-2xl font-bold text-accent mb-2">{seasonStats.projections.optimistic}</p>
-              <p className="text-xs text-foreground/70">
+              <h3 className="font-semibold text-sm mb-2 text-foreground/80">Optimistic</h3>
+              <p className="text-3xl font-bold mb-2">{seasonStats.projections.optimistic}</p>
+              <p className="text-xs text-foreground/80">
                 Close: {seasonStats.dates.optimistic.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
@@ -196,21 +217,28 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Daily Timeline */}
+      {/* Activity Frequency by Day of Week */}
       <Card>
         <CardHeader>
-          <CardTitle>Daily Activity</CardTitle>
-          <CardDescription>Badge-in frequency by day</CardDescription>
+          <CardTitle>Activity by Day of Week</CardTitle>
+          <CardDescription>Which days do you ski most often?</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={dailyChartData}>
+            <BarChart data={(() => {
+              const dayCount = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
+              dailyData?.forEach(d => {
+                const dayName = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
+                dayCount[dayName as keyof typeof dayCount] += d.count;
+              });
+              return Object.entries(dayCount).map(([day, count]) => ({ day, count }));
+            })()}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="date" stroke="var(--muted-foreground)" />
+              <XAxis dataKey="day" stroke="var(--muted-foreground)" />
               <YAxis stroke="var(--muted-foreground)" />
               <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }} />
-              <Line type="monotone" dataKey="count" stroke="var(--chart-3)" dot={false} />
-            </LineChart>
+              <Bar dataKey="count" fill="var(--chart-3)" radius={[8, 8, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
