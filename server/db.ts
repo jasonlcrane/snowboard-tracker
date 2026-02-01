@@ -112,7 +112,11 @@ export async function getBadgeInsBySeason(seasonId: number) {
 export async function addBadgeIn(data: InsertBadgeIn) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(badgeIns).values(data);
+  await db.insert(badgeIns).values(data).onDuplicateKeyUpdate({
+    set: {
+      updatedAt: new Date(),
+    },
+  });
 }
 
 // Season queries

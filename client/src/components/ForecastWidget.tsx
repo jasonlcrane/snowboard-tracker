@@ -15,7 +15,8 @@ export function ForecastWidget() {
 
     if (!forecast || forecast.length === 0) return null;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Use local date for string comparison to avoid UTC-based 'skipping today' bug
+    const todayStr = new Date().toLocaleDateString('en-CA');
     const displayForecast = forecast.filter(d => d.date >= todayStr).slice(0, 7);
 
     if (displayForecast.length === 0) return null;

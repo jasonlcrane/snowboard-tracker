@@ -110,9 +110,9 @@ export async function scrapeThreeRiversParks(
 
     // Add badge-ins to database
     let addedCount = 0;
+    let duplicateCount = 0;
     for (const badgeIn of filteredBadgeIns) {
       try {
-        // Check if already exists
         await addBadgeIn({
           seasonId: season.id,
           badgeInDate: badgeIn.date as any,
@@ -122,10 +122,13 @@ export async function scrapeThreeRiversParks(
         });
         addedCount++;
       } catch (error) {
-        // Likely duplicate - continue
+        // Even with onDuplicateKeyUpdate, we catch to be safe
+        console.warn(`Duplicate found for ${badgeIn.date} ${badgeIn.time}`);
+        duplicateCount++;
       }
     }
 
+    console.log(`Scrape finished: ${addedCount} added, ${duplicateCount} already existed.`);
     result.badgeInsAdded = addedCount;
     result.success = true;
 

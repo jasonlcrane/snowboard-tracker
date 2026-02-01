@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, date, decimal, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, date, decimal, json, uniqueIndex } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -36,6 +36,10 @@ export const badgeIns = mysqlTable("badge_ins", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => {
+  return [
+    uniqueIndex("badge_in_unique_idx").on(table.seasonId, table.badgeInDate, table.badgeInTime, table.isManual),
+  ];
 });
 
 export type BadgeIn = typeof badgeIns.$inferSelect;

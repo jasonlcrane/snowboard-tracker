@@ -184,6 +184,49 @@ export default function Admin() {
           )}
         </CardContent>
       </Card>
+
+      {/* How It Works */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader>
+          <CardTitle>How It Works</CardTitle>
+          <CardDescription>Understanding the automated hill tracking system</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex gap-4">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
+              1
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">Connect Your Account</h4>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Enter your Three Rivers Parks credentials above. They are encrypted using AES-256-GCM before being stored in the database.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
+              2
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">Automatic Scraping</h4>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                A background worker runs every night at 2:00 AM CST to fetch your latest hill visit history. You can also trigger it manually using the button above.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
+              3
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">Data & Analytics</h4>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                The dashboard calculates your visit frequency and projects your season-end totals based on historical weather patterns.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
