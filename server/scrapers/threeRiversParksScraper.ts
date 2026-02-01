@@ -134,11 +134,24 @@ export async function scrapeThreeRiversParks(
       await addScrapingLog({
         credentialId,
         status: 'success',
-        badgeInsFound: badgeIns.length,
+        badgeInsFound: filteredBadgeIns.length,
         badgeInsAdded: addedCount,
       });
     } catch (e) {
       console.warn('Could not save success log to DB (normal for manual testing).');
+    }
+
+    // Logout to clean up session
+    try {
+      console.log('Logging out to clean up session...');
+      // Look for sign out/logout link and click it
+      const logoutSelector = 'a[href*="logout"], a:has-text("Sign Out"), a:has-text("Logout")';
+      await page.click(logoutSelector).catch(() => {
+        console.log('Logout link not found, session will expire naturally');
+      });
+      await page.waitForTimeout(2000); // Give it time to process
+    } catch (e) {
+      console.log('Logout step failed (non-critical):', e);
     }
 
     return result;
