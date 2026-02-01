@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1769896559537,
+      "tag": "0000_curly_living_lightning",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1769896715008,
+      "tag": "0001_unusual_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1769897245585,
+      "tag": "0002_freezing_agent_zero",
+      "breakpoints": true
+    }
+  ]
+}
