@@ -57,6 +57,21 @@ export const seasons = mysqlTable("seasons", {
 export type Season = typeof seasons.$inferSelect;
 export type InsertSeason = typeof seasons.$inferInsert;
 
+// Weather cache for historical actual weather data
+export const weatherCache = mysqlTable("weather_cache", {
+  date: date("date").primaryKey(), // YYYY-MM-DD
+  tempHigh: decimal("temp_high", { precision: 5, scale: 2 }), // °F
+  tempLow: decimal("temp_low", { precision: 5, scale: 2 }), // °F
+  snowfall: decimal("snowfall", { precision: 5, scale: 2 }), // inches
+  conditions: varchar("conditions", { length: 128 }), // e.g., "Light snow", "Clear"
+  source: varchar("source", { length: 32 }).default("open-meteo"), // API source
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WeatherCache = typeof weatherCache.$inferSelect;
+export type InsertWeatherCache = typeof weatherCache.$inferInsert;
+
 // Weather forecast cache
 export const weatherForecasts = mysqlTable("weather_forecasts", {
   id: int("id").autoincrement().primaryKey(),

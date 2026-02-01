@@ -1,6 +1,6 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte, lte, asc, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, badgeIns, InsertBadgeIn, seasons, InsertSeason, projections, InsertProjection, adminCredentials, InsertAdminCredential, scrapingLogs, InsertScrapingLog } from "../drizzle/schema";
+import { InsertUser, users, badgeIns, InsertBadgeIn, seasons, InsertSeason, projections, InsertProjection, adminCredentials, InsertAdminCredential, scrapingLogs, InsertScrapingLog, weatherCache, InsertWeatherCache } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 import mysql from "mysql2/promise";
@@ -208,4 +208,36 @@ export async function updateManualBadgeIn(id: number, data: Partial<InsertBadgeI
   await db.update(badgeIns).set({ ...data, updatedAt: new Date() }).where(and(eq(badgeIns.id, id), eq(badgeIns.isManual, 1)));
 }
 
+// Weather cache queries
+export async function getWeatherForDate(date: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(weatherCache).where(eq(weatherCache.date, date)).limit(1);
+  return result[0] || null;
+}
 
+export async function getWeatherRange(startDate: string, endDate: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(weatherCache)
+    .where(and(
+      gte(weatherCache.date, new Date(startDate)),
+      lte(weatherCache.date, new Date(endDate))
+    ))
+    .orderBy(asc(weatherCache.date));
+}
+
+export async function upsertWeatherData(data: InsertWeatherCache) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(weatherCache).values(data).onDuplicateKeyUpdate({
+    set: {
+      tempHigh: data.tempHigh,
+      tempLow: data.tempLow,
+      snowfall: data.snowfall,
+      conditions: data.conditions,
+      updatedAt: new Date(),
+    },
+  });
+}
