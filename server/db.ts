@@ -181,7 +181,10 @@ export async function addScrapingLog(data: InsertScrapingLog) {
 export async function getScrapingLogs(credentialId: number, limit = 50) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(scrapingLogs).where(eq(scrapingLogs.credentialId, credentialId)).limit(limit);
+  return db.select().from(scrapingLogs)
+    .where(eq(scrapingLogs.credentialId, credentialId))
+    .orderBy(desc(scrapingLogs.createdAt))
+    .limit(limit);
 }
 
 // Manual badge-in queries

@@ -111,7 +111,15 @@ export async function scrapeThreeRiversParks(
 
     // Fetch existing badge-ins for this season to avoid false "added" counts
     const existingRecords = await getBadgeInsBySeason(season.id);
-    const existingKeySet = new Set(existingRecords.map((r: any) => `${r.badgeInDate}_${r.badgeInTime || ''}_${r.isManual}`));
+
+    // Standardize dates to YYYY-MM-DD for reliable key matching
+    const existingKeySet = new Set(existingRecords.map((r: any) => {
+      let dateStr = r.badgeInDate;
+      if (r.badgeInDate instanceof Date) {
+        dateStr = r.badgeInDate.toISOString().split('T')[0];
+      }
+      return `${dateStr}_${r.badgeInTime || ''}_${r.isManual}`;
+    }));
 
     // Add badge-ins to database
     let addedCount = 0;
@@ -141,7 +149,7 @@ export async function scrapeThreeRiversParks(
       }
     }
 
-    console.log(`Scrape finished: ${addedCount} new added, ${duplicateCount} already existed.`);
+    console.log(`Hyland Download finished: ${addedCount} new added, ${duplicateCount} already existed.`);
     result.badgeInsAdded = addedCount;
     result.badgeInsFound = filteredBadgeIns.length;
     result.success = true;
@@ -161,11 +169,17 @@ export async function scrapeThreeRiversParks(
     // Logout to clean up session
     try {
       console.log('Logging out to clean up session...');
-      // Look for sign out/logout link and click it
-      const logoutSelector = 'a[href*="logout"], a:has-text("Sign Out"), a:has-text("Logout")';
-      await page.click(logoutSelector).catch(() => {
-        console.log('Logout link not found, session will expire naturally');
-      });
+      // Use the specific selector provided for the Logout link
+      const logoutSelector = 'a.menuitem[href*="logout.html"]';
+      const logoutClicked = await page.click(logoutSelector)
+        .then(() => true)
+        .catch(() => false);
+
+      if (!logoutClicked) {
+        console.log('Logout link not clickable, attempting direct navigation to logout...');
+        await page.goto('https://mnthreeriversweb.myvscloud.com/webtrac/web/logout.html', { waitUntil: 'domcontentloaded' }).catch(() => { });
+      }
+
       await new Promise(resolve => setTimeout(resolve, 2000)); // Give it time to process
     } catch (e) {
       console.log('Logout step failed (non-critical):', e);

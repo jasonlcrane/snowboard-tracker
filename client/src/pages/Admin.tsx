@@ -48,7 +48,7 @@ export default function Admin() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
-        <p className="text-muted-foreground mt-2">Manage account credentials and scraping settings</p>
+        <p className="text-muted-foreground mt-2">Manage account credentials and automated data downloads</p>
       </div>
 
       {/* Credentials Section */}
@@ -115,25 +115,25 @@ export default function Admin() {
         </CardContent>
       </Card>
 
-      {/* Scraping Control */}
+      {/* Data Download Control */}
       <Card>
         <CardHeader>
-          <CardTitle>Manual Scrape</CardTitle>
-          <CardDescription>Trigger an immediate scrape of your badge-in history</CardDescription>
+          <CardTitle>Manual Data Download</CardTitle>
+          <CardDescription>Trigger an immediate download of your Hyland badge-in history</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={handleTriggerScrape} disabled={triggerScrapeMutation.isPending}>
             {triggerScrapeMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Scraping...
+                Downloading...
               </>
             ) : (
-              'Trigger Manual Scrape'
+              'Download Hyland Data'
             )}
           </Button>
           <p className="text-sm text-muted-foreground mt-3">
-            Scrapes are automatically run daily. Use this to manually refresh data.
+            Hyland data is automatically synced daily. Use this to manually refresh.
           </p>
         </CardContent>
       </Card>
@@ -141,8 +141,8 @@ export default function Admin() {
       {/* Scraping Logs */}
       <Card>
         <CardHeader>
-          <CardTitle>Scraping Logs</CardTitle>
-          <CardDescription>Recent scraping activity and results</CardDescription>
+          <CardTitle>Hyland Sync History</CardTitle>
+          <CardDescription>Recent Hyland data download activity and results</CardDescription>
         </CardHeader>
         <CardContent>
           {logsLoading ? (
@@ -227,7 +227,7 @@ export default function Admin() {
               2
             </div>
             <div>
-              <h4 className="font-semibold text-sm">Automatic Scraping</h4>
+              <h4 className="font-semibold text-sm">Automatic Sync</h4>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 A background worker runs every night at 2:00 AM CST to fetch your latest hill visit history. You can also trigger it manually using the button above.
               </p>
