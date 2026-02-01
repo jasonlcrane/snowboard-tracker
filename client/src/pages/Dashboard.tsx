@@ -5,6 +5,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Loader2, TrendingUp, Calendar, Zap } from 'lucide-react';
 import { ManualEntryDialog } from '@/components/ManualEntryDialog';
 import { ManualEntriesList } from '@/components/ManualEntriesList';
+import { ForecastWidget } from '@/components/ForecastWidget';
 
 export default function Dashboard() {
   const utils = trpc.useUtils();

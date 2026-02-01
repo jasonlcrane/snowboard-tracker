@@ -3,7 +3,7 @@ import { getBadgeInsBySeason, getActiveSeason, getWeatherRange } from '../db';
 
 export const weatherRouter = router({
     /**
-     * Get temperature analysis - shows badge-ins grouped by temperature ranges
+     * Get temperature analysis - shows shred days grouped by temperature ranges
      */
     getTemperatureAnalysis: publicProcedure.query(async () => {
         const season = await getActiveSeason();
@@ -29,7 +29,7 @@ export const weatherRouter = router({
             ])
         );
 
-        // Group badge-ins by temperature ranges
+        // Group shred days by temperature ranges
         const tempRanges = {
             '0-10°F': { count: 0, temps: [] as number[], snowfall: 0 },
             '10-20°F': { count: 0, temps: [] as number[], snowfall: 0 },
@@ -86,8 +86,7 @@ export const weatherRouter = router({
      * Get 7-day weather forecast
      */
     getForecast: publicProcedure.query(async () => {
-        // TODO: Implement forecast fetching
-        // For now, return empty array
-        return [];
+        const { fetchWeatherForecast } = await import('../weather-api');
+        return fetchWeatherForecast();
     }),
 });
