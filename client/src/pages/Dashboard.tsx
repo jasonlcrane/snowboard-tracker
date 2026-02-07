@@ -110,14 +110,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <ForecastWidget />
-        {credentials?.lastScrapedAt && (
-          <div className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 rounded">
-            Hyland Data Last Synced: {new Date(credentials.lastScrapedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-          </div>
-        )}
-      </div>
+      <ForecastWidget />
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -215,13 +208,20 @@ export default function Dashboard() {
       </Card>
 
       {/* Tracking Note */}
-      <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex gap-3 text-sm text-foreground/90">
-        <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0 mt-0.5">
-          ℹ️
+      <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex flex-col md:flex-row gap-3 text-sm text-foreground/90 justify-between items-center">
+        <div className="flex gap-3">
+          <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0 mt-0.5">
+            ℹ️
+          </div>
+          <p>
+            <strong>Hyland Hills</strong> visits are automatically synced daily on app load. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
+          </p>
         </div>
-        <p>
-          <strong>Hyland Hills</strong> visits are automatically synced daily on app load. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
-        </p>
+        {credentials?.lastScrapedAt && (
+          <div className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/10 border border-muted/20 px-2 py-1 rounded whitespace-nowrap">
+            Hyland Synced: {new Date(credentials.lastScrapedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
       </div>
 
       {/* Charts */}
