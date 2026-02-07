@@ -208,17 +208,17 @@ export default function Dashboard() {
       </Card>
 
       {/* Tracking Note */}
-      <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex flex-col md:flex-row gap-3 text-sm text-foreground/90 justify-between items-center">
-        <div className="flex gap-3">
-          <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0 mt-0.5">
+      <div className="bg-accent/5 border border-accent/20 rounded-lg p-6 flex flex-col gap-4 text-sm text-foreground/90 items-center text-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
             ℹ️
           </div>
-          <p>
+          <p className="max-w-2xl">
             <strong>Hyland Hills</strong> visits are automatically synced daily on app load. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
           </p>
         </div>
         {credentials?.lastScrapedAt && (
-          <div className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/10 border border-muted/20 px-2 py-1 rounded whitespace-nowrap">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/10 border border-muted/20 px-3 py-1.5 rounded-full">
             Hyland Synced: {new Date(credentials.lastScrapedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </div>
         )}
