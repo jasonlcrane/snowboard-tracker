@@ -15,7 +15,23 @@ export default function Dashboard() {
   const { data: manualEntries } = trpc.manual.getManualEntries.useQuery();
   const { data: tempAnalysis } = trpc.weather.getTemperatureAnalysis.useQuery();
 
+  const { data: credentials } = trpc.admin.getCredentials.useQuery();
+  const [showGlimmer, setShowGlimmer] = useState(false);
+  const [lastBadgeCount, setLastBadgeCount] = useState<number | null>(null);
+
   const isLoading = statsLoading || weeklyLoading || dailyLoading;
+
+  // Trigger glimmer when total badge-ins change
+  useEffect(() => {
+    if (seasonStats?.stats.totalBadgeIns !== undefined) {
+      if (lastBadgeCount !== null && seasonStats.stats.totalBadgeIns > lastBadgeCount) {
+        setShowGlimmer(true);
+        const timer = setTimeout(() => setShowGlimmer(false), 1000);
+        return () => clearTimeout(timer);
+      }
+      setLastBadgeCount(seasonStats.stats.totalBadgeIns);
+    }
+  }, [seasonStats?.stats.totalBadgeIns, lastBadgeCount]);
 
   // Helper to parse YYYY-MM-DD strings or UTC Date objects as local dates to avoid shift
   const parseLocalDate = (dateVal: string | Date) => {
@@ -34,6 +50,7 @@ export default function Dashboard() {
       utils.badge.getWeeklyBreakdown.invalidate();
       utils.badge.getDailyBreakdown.invalidate();
       utils.manual.getManualEntries.invalidate();
+      utils.admin.getCredentials.invalidate();
     }, 30000);
     return () => clearInterval(interval);
   }, [utils]);
@@ -93,11 +110,19 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 p-6">
-      <ForecastWidget />
+      <div className="flex items-center justify-between">
+        <ForecastWidget />
+        {credentials?.lastScrapedAt && (
+          <div className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 rounded">
+            Hyland Data Last Synced: {new Date(credentials.lastScrapedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
+      </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="relative overflow-hidden group">
+        <Card className={`relative overflow-hidden group transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/50 scale-[1.02]' : ''}`}>
+          {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex justify-between items-center">
               Total Hill Days
@@ -109,12 +134,15 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{seasonStats.stats.totalBadgeIns}</div>
+            <div className={`text-4xl font-bold transition-all duration-700 ${showGlimmer ? 'text-accent scale-110' : ''}`}>
+              {seasonStats.stats.totalBadgeIns}
+            </div>
             <p className="text-xs text-muted-foreground mt-2">{seasonStats.stats.daysElapsed} days elapsed</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`relative overflow-hidden transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
+          {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Projected Hill Days
@@ -126,7 +154,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`relative overflow-hidden transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
+          {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Zap className="w-4 h-4" /> Visit Rate
@@ -138,7 +167,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`relative overflow-hidden transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
+          {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Calendar className="w-4 h-4" /> Estimated Days Remaining
@@ -190,7 +220,7 @@ export default function Dashboard() {
           ℹ️
         </div>
         <p>
-          <strong>Hyland Hills</strong> visits may eventually be tracked automatically overnight, but go to the admin page to update manually for now. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
+          <strong>Hyland Hills</strong> visits are automatically synced daily on app load. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
         </p>
       </div>
 

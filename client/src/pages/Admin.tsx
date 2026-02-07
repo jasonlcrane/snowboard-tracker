@@ -13,6 +13,7 @@ export default function Admin() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showAllLogs, setShowAllLogs] = useState(false);
+  const [isEditingCredentials, setIsEditingCredentials] = useState(false);
 
   const { data: credentials, isLoading: credLoading } = trpc.admin.getCredentials.useQuery();
   const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = trpc.admin.getScrapingLogs.useQuery({ limit: 50 });
@@ -25,6 +26,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       refetchLogs();
+      setIsEditingCredentials(false);
     }
   });
 
@@ -56,6 +58,7 @@ export default function Admin() {
       toast.success('Credentials saved securely');
       setUsername('');
       setPassword('');
+      setIsEditingCredentials(false);
     } catch (error) {
       toast.error('Failed to save credentials');
     }
@@ -64,9 +67,9 @@ export default function Admin() {
   const handleTriggerScrape = async () => {
     try {
       await triggerScrapeMutation.mutateAsync();
-      toast.success('Hyland data download complete');
+      toast.success('Hyland data sync complete');
     } catch (error) {
-      toast.error('Failed to trigger download');
+      toast.error('Failed to trigger sync');
     }
   };
 
@@ -74,92 +77,132 @@ export default function Admin() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
-        <p className="text-muted-foreground mt-2">Manage account credentials and automated data downloads</p>
+        <p className="text-muted-foreground mt-2">Manage account credentials and automated data syncs</p>
       </div>
 
       {/* Credentials Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Three Rivers Parks Account</CardTitle>
-          <CardDescription>Your credentials are encrypted and stored securely</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Three Rivers Parks Account</CardTitle>
+              <CardDescription>Your credentials are encrypted and stored securely</CardDescription>
+            </div>
+            {!isEditingCredentials && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingCredentials(true)}
+              >
+                {credentials ? 'Update Credentials' : 'Add Credentials'}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSaveCredentials} className="space-y-4">
-            <div>
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Your Three Rivers Parks username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-2"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <div className="flex gap-2 mt-2">
+          {isEditingCredentials ? (
+            <form onSubmit={handleSaveCredentials} className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Your Three Rivers Parks password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="Your Three Rivers Parks username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-2"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Your Three Rivers Parks password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="px-3"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit" disabled={saveCredentialsMutation.isPending}>
+                  {saveCredentialsMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Credentials'
+                  )}
+                </Button>
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="px-3"
+                  variant="ghost"
+                  onClick={() => setIsEditingCredentials(false)}
+                  disabled={saveCredentialsMutation.isPending}
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  Cancel
                 </Button>
               </div>
-            </div>
-
-            {credentials && (
-              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-700 dark:text-green-400">
-                  Credentials last updated: {new Date(credentials.lastScrapedAt || Date.now()).toLocaleDateString()}
-                </span>
-              </div>
-            )}
-
-            <Button type="submit" disabled={saveCredentialsMutation.isPending}>
-              {saveCredentialsMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              {credentials ? (
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-700 dark:text-green-400">
+                    Credentials configured and active
+                  </span>
+                </div>
               ) : (
-                'Save Credentials'
+                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-2">
+                  <X className="w-4 h-4 text-yellow-500" />
+                  <span className="text-sm text-yellow-700 dark:text-yellow-400">
+                    No credentials configured yet
+                  </span>
+                </div>
               )}
-            </Button>
-          </form>
+
+              {credentials && credentials.lastScrapedAt && (
+                <p className="text-sm text-muted-foreground">
+                  Last successful sync: {new Date(credentials.lastScrapedAt).toLocaleString()}
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Data Download Control */}
       <Card>
         <CardHeader>
-          <CardTitle>Manual Data Download</CardTitle>
-          <CardDescription>Trigger an immediate download of your Hyland badge-in history</CardDescription>
+          <CardTitle>Hyland Data Sync</CardTitle>
+          <CardDescription>Manual sync of your Hyland badge-in history</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={handleTriggerScrape} disabled={triggerScrapeMutation.isPending}>
             {triggerScrapeMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Downloading...
+                Syncing...
               </>
             ) : (
-              'Download Hyland Data'
+              'Sync Hyland Data'
             )}
           </Button>
           <p className="text-sm text-muted-foreground mt-3">
-            Hyland data may eventually be automatically synced daily. Use this to manually refresh.
+            Hyland data automatically syncs daily on app load. Use this to manually refresh if needed.
           </p>
         </CardContent>
       </Card>
@@ -265,7 +308,7 @@ export default function Admin() {
             <div>
               <h4 className="font-semibold text-sm">Automatic Sync</h4>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                A background worker runs every night at 2:00 AM CST to fetch your latest hill visit history. You can also trigger it manually using the button above.
+                A sync is automatically triggered on your first app load each day. You can also trigger it manually using the button above.
               </p>
             </div>
           </div>

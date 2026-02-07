@@ -171,6 +171,12 @@ export async function saveAdminCredentials(data: InsertAdminCredential) {
   });
 }
 
+export async function updateAdminCredentialScrapeTime(id: number, date: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(adminCredentials).set({ lastScrapedAt: date }).where(eq(adminCredentials.id, id));
+}
+
 // Scraping log queries
 export async function addScrapingLog(data: InsertScrapingLog) {
   const db = await getDb();

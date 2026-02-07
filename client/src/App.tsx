@@ -10,6 +10,7 @@ import HistoryPage from "./pages/HistoryPage";
 import Admin from "./pages/Admin";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Header } from "./components/Header";
+import { AutoSyncTrigger } from "./components/AutoSyncTrigger";
 
 function Router() {
   const { user } = useAuth();
@@ -32,6 +33,7 @@ function App() {
         <TooltipProvider>
           <div className="min-h-screen bg-background flex flex-col">
             <Toaster />
+            <AutoSyncTrigger />
             <Header />
             <main className="flex-1">
               <Router />
