@@ -9,6 +9,22 @@ export const badgeRouter = router({
   getSeasonStats: publicProcedure.query(async () => {
     const season = await getActiveSeason();
     if (!season) {
+      if (process.env.NODE_ENV === 'development') {
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), 10, 15); // Nov 15th
+        const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const totalBadgeIns = 42; // Mock number
+        const { conservative, average, optimistic } = estimateSeasonEndDates();
+        const projections = calculateProjections(totalBadgeIns, daysElapsed, conservative, average, optimistic);
+
+        return {
+          season: { id: 1, name: '2025/2026 Season (Mock)', startDate: startDate.toISOString().split('T')[0], status: 'active' },
+          stats: { totalBadgeIns, daysElapsed, visitRate: projections.visitRate, visitRatePerWeek: projections.visitRate * 7 },
+          projections: { conservative: projections.conservativeTotal, average: projections.averageTotal, optimistic: projections.optimisticTotal, remainingDays: projections.remainingDays },
+          dates: { conservative, average, optimistic },
+          lastUpdated: today,
+        };
+      }
       return null;
     }
 
@@ -55,13 +71,22 @@ export const badgeRouter = router({
       lastUpdated: projection?.projectionDate || today,
     };
   }),
-
   getWeeklyBreakdown: publicProcedure.query(async () => {
     const season = await getActiveSeason();
-    if (!season) return [];
+    if (!season) {
+      if (process.env.NODE_ENV === 'development') {
+        // Return 8 weeks of mock data
+        return Array.from({ length: 8 }).map((_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (i * 7));
+          return { week: date.toISOString().split('T')[0], count: Math.floor(Math.random() * 5) + 1, date };
+        }).reverse();
+      }
+      return [];
+    }
 
-    const badgeIns = await getBadgeInsBySeason(season.id);
-    const badgeInDates = badgeIns.map(b => new Date(b.badgeInDate));
+    const badgeInsRows = await getBadgeInsBySeason(season.id);
+    const badgeInDates = badgeInsRows.map(b => new Date(b.badgeInDate));
     const weeklyCounts = getWeeklyCounts(badgeInDates);
 
     return Object.entries(weeklyCounts)
@@ -75,7 +100,17 @@ export const badgeRouter = router({
 
   getDailyBreakdown: publicProcedure.query(async () => {
     const season = await getActiveSeason();
-    if (!season) return [];
+    if (!season) {
+      if (process.env.NODE_ENV === 'development') {
+        // Return 30 days of mock data
+        return Array.from({ length: 30 }).map((_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          return { day: date.toISOString().split('T')[0], count: Math.random() > 0.7 ? 1 : 0, date };
+        }).reverse();
+      }
+      return [];
+    }
 
     const badgeIns = await getBadgeInsBySeason(season.id);
     const badgeInDates = badgeIns.map(b => new Date(b.badgeInDate));

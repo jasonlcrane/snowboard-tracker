@@ -9,16 +9,32 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db) {
+    const dbUrl = process.env.DATABASE_URL;
+
+    if (!dbUrl || dbUrl.includes('localhost:3306') || dbUrl.includes('placeholder')) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("[Database] No valid DATABASE_URL found or using default. Running in mock mode.");
+        return null;
+      }
+    }
+
     try {
       const pool = mysql.createPool({
-        uri: process.env.DATABASE_URL,
+        uri: dbUrl,
         ssl: { rejectUnauthorized: false }, // Critical for Railway/Cloud DBs
+        connectTimeout: 2000,
       });
       _db = drizzle(pool);
+      console.log("[Database] Connected successfully");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("[Database] Could not connect to MySQL. This is expected on some Chromebook/Docker setups. Using mock data.");
+        _db = null;
+      } else {
+        console.error("[Database] Failed to connect:", error);
+        throw error;
+      }
     }
   }
   return _db;

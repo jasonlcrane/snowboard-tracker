@@ -262,6 +262,20 @@ class SDKServer {
     const sessionCookie = cookies.get(COOKIE_NAME);
 
     if (!sessionCookie) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[Auth] Dev Mode: Bypassing authentication with mock user");
+        return {
+          id: 1,
+          openId: 'dev_user_123',
+          name: 'Dev User',
+          email: 'dev@example.com',
+          role: 'admin',
+          loginMethod: 'google',
+          lastSignedIn: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User;
+      }
       console.log("[Auth] No session cookie found");
       throw ForbiddenError("Invalid session cookie");
     }
@@ -269,6 +283,20 @@ class SDKServer {
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[Auth] Dev Mode: Session verification failed, using mock user");
+        return {
+          id: 1,
+          openId: 'dev_user_123',
+          name: 'Dev User',
+          email: 'dev@example.com',
+          role: 'admin',
+          loginMethod: 'google',
+          lastSignedIn: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User;
+      }
       console.log("[Auth] Session verification failed (invalid signature or expired)");
       throw ForbiddenError("Invalid session cookie");
     }

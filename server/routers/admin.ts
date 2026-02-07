@@ -12,6 +12,14 @@ export const adminRouter = router({
 
     const credentials = await getAdminCredentials(ctx.user.id);
     if (!credentials) {
+      if (process.env.NODE_ENV === 'development') {
+        return {
+          id: 1,
+          accountType: 'three_rivers_parks',
+          isActive: true,
+          lastScrapedAt: new Date(),
+        };
+      }
       return null;
     }
 

@@ -5,6 +5,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Loader2, TrendingUp, Calendar, Zap } from 'lucide-react';
 import { ManualEntryDialog } from '@/components/ManualEntryDialog';
 import { ForecastWidget } from '@/components/ForecastWidget';
+import { WeatherAlerts } from '@/components/WeatherAlerts';
 import { Link } from 'wouter';
 
 export default function Dashboard() {
@@ -111,6 +112,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 p-6">
       <ForecastWidget />
+      <WeatherAlerts />
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

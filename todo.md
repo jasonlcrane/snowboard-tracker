@@ -1,5 +1,10 @@
 # Carter Badge Tracker - Project TODO
 
+## Local Development (Chromebook/Docker)
+- **Dev Mode**: The app now supports a "headless" dev mode. If MySQL is not running locally, the app will automatically fall back to mock data.
+- **Auth Bypass**: In `NODE_ENV=development`, you will be automatically logged in as a mock admin user.
+- **Running**: Just run `npm run dev` and visit `http://localhost:3000`.
+
 ## Core Features
 
 ### Phase 1: Database & Schema
