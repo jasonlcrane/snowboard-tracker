@@ -77,6 +77,7 @@ describe('Manual Badge-In Router', () => {
     try {
       await caller.manual.addManualEntry({
         badgeInDate: new Date().toISOString().split('T')[0],
+        hill: 'Buck Hill',
       });
       expect.fail('Should have thrown an error');
     } catch (error) {

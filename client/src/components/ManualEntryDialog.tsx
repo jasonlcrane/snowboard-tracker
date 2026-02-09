@@ -12,14 +12,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Check, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 export function ManualEntryDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [hill, setHill] = useState('');
+  const [hillSearch, setHillSearch] = useState('');
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const [notes, setNotes] = useState('');
+
+  const { data: hillOptions = [] } = trpc.manual.getHillNames.useQuery();
 
   const addManualMutation = trpc.manual.addManualEntry.useMutation();
   const utils = trpc.useUtils();
@@ -35,13 +42,14 @@ export function ManualEntryDialog({ trigger }: { trigger?: React.ReactNode }) {
     try {
       await addManualMutation.mutateAsync({
         badgeInDate: date,
-        badgeInTime: time,
+        hill: hill || hillSearch,
         notes: notes || undefined,
       });
 
       toast.success('Hill day added successfully');
       setDate('');
-      setTime('');
+      setHill('');
+      setHillSearch('');
       setNotes('');
       setOpen(false);
 
@@ -87,14 +95,64 @@ export function ManualEntryDialog({ trigger }: { trigger?: React.ReactNode }) {
           </div>
 
           <div>
-            <Label htmlFor="time">Time (Optional)</Label>
-            <Input
-              id="time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="mt-2"
-            />
+            <Label htmlFor="hill">Hill *</Label>
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={popoverOpen}
+                  className="w-full justify-between mt-2"
+                >
+                  {hill || "Select or enter hill..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput
+                    placeholder="Search hills..."
+                    value={hillSearch}
+                    onValueChange={setHillSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm"
+                        onClick={() => {
+                          setHill(hillSearch);
+                          setPopoverOpen(false);
+                        }}
+                      >
+                        Add "{hillSearch}"
+                      </Button>
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {hillOptions.map((option) => (
+                        <CommandItem
+                          key={option}
+                          value={option}
+                          onSelect={(currentValue) => {
+                            setHill(currentValue === hill ? "" : currentValue);
+                            setHillSearch("");
+                            setPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              hill === option ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {option}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>

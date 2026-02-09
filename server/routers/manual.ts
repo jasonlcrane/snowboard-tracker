@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../_core/trpc';
-import { addManualBadgeIn, getManualBadgeIns, deleteManualBadgeIn, updateManualBadgeIn, getActiveSeason } from '../db';
+import { addManualBadgeIn, getManualBadgeIns, deleteManualBadgeIn, updateManualBadgeIn, getActiveSeason, getUniqueHillNames } from '../db';
 
 export const manualRouter = router({
   addManualEntry: protectedProcedure
     .input(
       z.object({
         badgeInDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid date'),
-        badgeInTime: z.string().optional(),
+        hill: z.string(),
         notes: z.string().optional(),
       })
     )
@@ -23,7 +23,7 @@ export const manualRouter = router({
       await addManualBadgeIn({
         seasonId: season.id,
         badgeInDate: dateStr as any,
-        badgeInTime: input.badgeInTime,
+        passType: input.hill,
         isManual: 1,
         notes: input.notes,
       });
@@ -39,23 +39,34 @@ export const manualRouter = router({
     return entries.map((entry) => ({
       id: entry.id,
       date: entry.badgeInDate,
-      time: entry.badgeInTime,
+      hill: entry.passType,
       notes: entry.notes,
       createdAt: entry.createdAt,
     }));
+  }),
+
+  getHillNames: protectedProcedure.query(async () => {
+    const season = await getActiveSeason();
+    if (!season) return ["Buck Hill", "Wild Mountain"];
+
+    const dbHills = await getUniqueHillNames(season.id);
+    const defaults = ["Buck Hill", "Wild Mountain"];
+
+    const allHills = new Set([...defaults, ...dbHills]);
+    return Array.from(allHills).sort();
   }),
 
   updateManualEntry: protectedProcedure
     .input(
       z.object({
         id: z.number(),
-        badgeInTime: z.string().optional(),
+        hill: z.string().optional(),
         notes: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
       await updateManualBadgeIn(input.id, {
-        badgeInTime: input.badgeInTime,
+        passType: input.hill,
         notes: input.notes,
       });
 

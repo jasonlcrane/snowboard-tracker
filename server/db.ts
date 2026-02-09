@@ -138,7 +138,17 @@ export async function addBadgeIn(data: InsertBadgeIn) {
 // Season queries
 export async function getActiveSeason() {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        id: 1,
+        name: "2025/2026 Season",
+        startDate: "2025-11-15",
+        status: "active" as const
+      };
+    }
+    return null;
+  }
   const result = await db.select().from(seasons).where(eq(seasons.status, "active")).limit(1);
   return result[0] || null;
 }
@@ -219,28 +229,68 @@ export async function updateScrapingLog(id: number, data: Partial<InsertScraping
 // Manual badge-in queries
 export async function addManualBadgeIn(data: InsertBadgeIn) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock addManualBadgeIn:", data);
+      return { insertId: Math.floor(Math.random() * 1000) };
+    }
+    throw new Error("Database not available");
+  }
   const result = await db.insert(badgeIns).values(data);
   return result;
 }
 
 export async function getManualBadgeIns(seasonId: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      return []; // Return empty for now, or mock data if needed
+    }
+    return [];
+  }
   return db.select().from(badgeIns).where(
     and(eq(badgeIns.seasonId, seasonId), eq(badgeIns.isManual, 1))
   );
 }
 
+export async function getUniqueHillNames(seasonId: number) {
+  const db = await getDb();
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      return ["Buck Hill", "Wild Mountain"];
+    }
+    return [];
+  }
+  const results = await db.select({ hill: badgeIns.passType })
+    .from(badgeIns)
+    .where(eq(badgeIns.seasonId, seasonId));
+
+  return results
+    .map(r => r.hill)
+    .filter((h): h is string => !!h);
+}
+
 export async function deleteManualBadgeIn(id: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock deleteManualBadgeIn:", id);
+      return;
+    }
+    throw new Error("Database not available");
+  }
   await db.delete(badgeIns).where(and(eq(badgeIns.id, id), eq(badgeIns.isManual, 1)));
 }
 
 export async function updateManualBadgeIn(id: number, data: Partial<InsertBadgeIn>) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock updateManualBadgeIn:", id, data);
+      return;
+    }
+    throw new Error("Database not available");
+  }
   await db.update(badgeIns).set({ ...data, updatedAt: new Date() }).where(and(eq(badgeIns.id, id), eq(badgeIns.isManual, 1)));
 }
 
