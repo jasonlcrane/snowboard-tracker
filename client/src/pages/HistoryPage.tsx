@@ -75,8 +75,13 @@ export default function HistoryPage() {
                                             <div className="flex items-center gap-2">
                                                 <MapPin className="w-3 h-3 text-muted-foreground" />
                                                 <span className={entry.isManual ? "text-accent font-medium" : "text-foreground"}>
-                                                    {entry.isManual ? (entry.notes || 'Non-Hyland') : 'Hyland Hills'}
+                                                    {entry.isManual ? (entry.passType || 'Non-Hyland') : 'Hyland Hills'}
                                                 </span>
+                                                {entry.isManual && entry.notes && (
+                                                    <span className="text-[10px] text-muted-foreground italic ml-1">
+                                                        ({entry.notes})
+                                                    </span>
+                                                )}
                                                 {!entry.isManual && (
                                                     <Badge variant="secondary" className="text-[10px] py-0 px-1 bg-accent/10 border-accent/20 text-accent">
                                                         Auto

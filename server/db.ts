@@ -263,7 +263,7 @@ export async function getUniqueHillNames(seasonId: number) {
   }
   const results = await db.select({ hill: badgeIns.passType })
     .from(badgeIns)
-    .where(eq(badgeIns.seasonId, seasonId));
+    .where(and(eq(badgeIns.seasonId, seasonId), eq(badgeIns.isManual, 1)));
 
   return results
     .map(r => r.hill)
