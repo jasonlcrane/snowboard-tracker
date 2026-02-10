@@ -440,27 +440,40 @@ export default function Dashboard() {
             <div className="h-[300px] w-full mt-[-20px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
-                  innerRadius="30%"
+                  innerRadius="20%"
                   outerRadius="90%"
                   data={timeData}
-                  startAngle={180}
-                  endAngle={-180}
+                  startAngle={90}
+                  endAngle={-270}
                 >
+                  <PolarAngleAxis
+                    type="number"
+                    domain={[0, Math.max(...(timeData?.map(d => d.count) || [10])) * 1.2]}
+                    angleAxisId={0}
+                    tick={false}
+                  />
                   <RadialBar
                     background
                     dataKey="count"
-                    cornerRadius={10}
+                    cornerRadius={15}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px' }}
-                    formatter={(value: any, name: any, props: any) => [value, props.payload.range]}
+                    formatter={(value: any, name: any, props: any) => [`${value} Sessions`, props.payload.range]}
                   />
                   <Legend
                     iconSize={10}
                     layout="vertical"
                     verticalAlign="middle"
                     align="right"
-                    wrapperStyle={{ fontSize: '10px' }}
+                    formatter={(value, entry: any) => (
+                      <span className="text-foreground/80">
+                        <span className="font-bold text-foreground">{value}</span>
+                        <span className="ml-2 text-[9px] opacity-60">({entry.payload.range})</span>
+                        <span className="ml-2 font-mono text-accent">{entry.payload.count}</span>
+                      </span>
+                    )}
+                    wrapperStyle={{ lineHeight: '24px', paddingLeft: '20px' }}
                   />
                 </RadialBarChart>
               </ResponsiveContainer>

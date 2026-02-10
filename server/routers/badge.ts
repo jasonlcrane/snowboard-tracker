@@ -346,10 +346,10 @@ export const badgeRouter = router({
         if (!season) {
           if (process.env.NODE_ENV === 'development') {
             return [
-              { period: 'Morning', count: 12, fill: 'var(--chart-1)' },
-              { period: 'Mid-Day', count: 18, fill: 'var(--chart-2)' },
-              { period: 'Evening', count: 25, fill: 'var(--chart-3)' },
-              { period: 'Night', count: 7, fill: 'var(--chart-4)' },
+              { period: 'Morning', count: 12, fill: 'var(--chart-1)', range: '6am - 11am' },
+              { period: 'Mid-Day', count: 18, fill: 'var(--chart-2)', range: '11am - 3pm' },
+              { period: 'Evening', count: 25, fill: 'var(--chart-3)', range: '3pm - 7pm' },
+              { period: 'Night', count: 7, fill: 'var(--chart-4)', range: '7pm - 12am' },
             ];
           }
           return [];
@@ -361,10 +361,10 @@ export const badgeRouter = router({
 
       if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !(await getDb())) {
         return [
-          { period: 'Morning', count: 12, fill: 'var(--chart-1)' },
-          { period: 'Mid-Day', count: 18, fill: 'var(--chart-2)' },
-          { period: 'Evening', count: 25, fill: 'var(--chart-3)' },
-          { period: 'Night', count: 7, fill: 'var(--chart-4)' },
+          { period: 'Morning', count: 12, fill: 'var(--chart-1)', range: '6am - 11am' },
+          { period: 'Mid-Day', count: 18, fill: 'var(--chart-2)', range: '11am - 3pm' },
+          { period: 'Evening', count: 25, fill: 'var(--chart-3)', range: '3pm - 7pm' },
+          { period: 'Night', count: 7, fill: 'var(--chart-4)', range: '7pm - 12am' },
         ];
       }
 
