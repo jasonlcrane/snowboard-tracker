@@ -268,7 +268,10 @@ export const badgeRouter = router({
       const updateData: any = {};
       if (input.goal !== undefined) updateData.goal = input.goal;
       if (input.estimatedEndDate !== undefined) updateData.estimatedEndDate = input.estimatedEndDate === "" ? null : input.estimatedEndDate;
-      if (input.actualEndDate !== undefined) updateData.actualEndDate = input.actualEndDate === "" ? null : input.actualEndDate;
+      if (input.actualEndDate !== undefined) {
+        updateData.actualEndDate = input.actualEndDate === "" ? null : input.actualEndDate;
+        updateData.status = input.actualEndDate === "" ? "active" : "completed";
+      }
 
       await db.update(seasons).set(updateData).where(eq(seasons.id, input.seasonId));
       return { success: true };

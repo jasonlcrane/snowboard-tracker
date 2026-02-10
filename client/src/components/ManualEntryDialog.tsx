@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 export function ManualEntryDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [hill, setHill] = useState('');
   const [hillSearch, setHillSearch] = useState('');
   const [popoverOpen, setPopoverOpen] = useState(false);

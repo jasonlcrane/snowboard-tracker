@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Edit2, Target, Trophy } from 'lucide-react';
+import { Edit2, Target, Trophy, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
@@ -226,6 +226,18 @@ export default function Dashboard() {
                       />
                       <p className="text-[10px] text-muted-foreground">Locks the season once finished.</p>
                     </div>
+
+                    {actEndValue && !seasonStats.season.actualEndDate && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-md flex items-start gap-3">
+                        <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
+                        <div className="space-y-1">
+                          <p className="text-xs text-yellow-600 font-bold uppercase tracking-tight">Potentially Destructive Action</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            Setting an <strong>Actual End Date</strong> will mark this season as <strong>completed</strong> and lock all future projections. This is usually done once the resorts have closed.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
