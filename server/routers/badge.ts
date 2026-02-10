@@ -293,7 +293,11 @@ export const badgeRouter = router({
       const snowStart = new Date(new Date(season.startDate).getFullYear(), 10, 1); // Start Nov 1
       if (firstBadgeIn < snowStart) snowStart.setTime(firstBadgeIn.getTime());
 
-      const { average: snowEnd } = estimateSeasonEndDates(new Date());
+      const { average: fallbackEnd } = estimateSeasonEndDates(new Date());
+      const snowEnd = (season as any).actualEndDate ? new Date((season as any).actualEndDate)
+        : (season as any).estimatedEndDate ? new Date((season as any).estimatedEndDate)
+          : fallbackEnd;
+
       const totalDays = Math.max(1, Math.ceil((snowEnd.getTime() - snowStart.getTime()) / (1000 * 60 * 60 * 24)));
 
       const countsByDate = badgeInsRows.reduce((acc, b) => {
