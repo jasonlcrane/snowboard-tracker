@@ -209,8 +209,8 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{seasonStats.stats.visitRate.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-2">{seasonStats.stats.visitRatePerWeek.toFixed(1)} per week</p>
+            <div className="text-4xl font-bold">{(seasonStats.stats.visitRate ?? 0).toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground mt-2">{(seasonStats.stats.visitRatePerWeek ?? 0).toFixed(1)} per week</p>
           </CardContent>
         </Card>
 
@@ -393,7 +393,7 @@ export default function Dashboard() {
               </div>
               <div className="flex flex-col items-center p-3 rounded-md bg-muted/5 border border-border">
                 <span className="text-xs text-muted-foreground uppercase tracking-widest">Required Avg</span>
-                <span className="text-xl font-bold">{(seasonStats.stats as any).neededVisitRatePerWeek.toFixed(1)} / week</span>
+                <span className="text-xl font-bold">{((seasonStats.stats as any).neededVisitRatePerWeek ?? 0).toFixed(1)} / week</span>
               </div>
             </div>
           </CardContent>

@@ -29,7 +29,14 @@ export const badgeRouter = router({
           const projections = calculateProjections(42, daysElapsed, conservative, average, optimistic);
           return {
             season: { id: 1, name: '2025/2026 Season (Mock)', startDate: startDate.toISOString().split('T')[0], status: 'active', goal: 50 },
-            stats: { totalBadgeIns: 42, daysElapsed, visitRate: projections.visitRate, visitRatePerWeek: projections.visitRate * 7 },
+            stats: {
+              totalBadgeIns: 42,
+              daysElapsed,
+              visitRate: projections.visitRate,
+              visitRatePerWeek: projections.visitRate * 7,
+              neededVisitRate: 0.5,
+              neededVisitRatePerWeek: 3.5
+            },
             projections: { conservative: projections.conservativeTotal, average: projections.averageTotal, optimistic: projections.optimisticTotal, remainingDays: projections.remainingDays },
             dates: { conservative, average, optimistic },
             lastUpdated: today,
@@ -49,7 +56,14 @@ export const badgeRouter = router({
         const projections = calculateProjections(42, daysElapsed, conservative, average, optimistic);
         return {
           season: { id: season.id, name: season.name, startDate: season.startDate, status: season.status, goal: 50 },
-          stats: { totalBadgeIns: 42, daysElapsed, visitRate: projections.visitRate, visitRatePerWeek: projections.visitRate * 7 },
+          stats: {
+            totalBadgeIns: 42,
+            daysElapsed,
+            visitRate: projections.visitRate,
+            visitRatePerWeek: projections.visitRate * 7,
+            neededVisitRate: 0.5,
+            neededVisitRatePerWeek: 3.5
+          },
           projections: { conservative: projections.conservativeTotal, average: projections.averageTotal, optimistic: projections.optimisticTotal, remainingDays: projections.remainingDays },
           dates: { conservative, average, optimistic },
           lastUpdated: today,
