@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [estEndValue, setEstEndValue] = useState<string>('');
   const [actEndValue, setActEndValue] = useState<string>('');
   const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
+  const [isTimingDialogOpen, setIsTimingDialogOpen] = useState(false);
 
   const { data: seasonStats, isLoading: statsLoading, refetch: refetchStats } = trpc.badge.getSeasonStats.useQuery({ seasonId: selectedSeasonId });
   const { data: paceData, isLoading: paceLoading, refetch: refetchPace } = trpc.badge.getCumulativePace.useQuery({ seasonId: selectedSeasonId });
@@ -148,6 +149,7 @@ export default function Dashboard() {
       });
       toast.success('Season settings updated!');
       setIsGoalDialogOpen(false);
+      setIsTimingDialogOpen(false);
       refetchStats();
       refetchPace();
     } catch (error) {
@@ -191,13 +193,55 @@ export default function Dashboard() {
         <Card className={`relative overflow-hidden transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
           {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> Projected Hill Days
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Projected Hill Days</span>
+              <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Season Timing</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="estEnd">Estimated End Date</Label>
+                      <Input
+                        id="estEnd"
+                        type="date"
+                        value={estEndValue}
+                        onChange={(e) => setEstEndValue(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Used for progress charting and projections.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="actEnd">Actual End Date</Label>
+                      <Input
+                        id="actEnd"
+                        type="date"
+                        value={actEndValue}
+                        onChange={(e) => setActEndValue(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Locks the season once finished.</p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
+                      Save Timing
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{seasonStats.projections.average}</div>
-            <p className="text-xs text-muted-foreground mt-2">Average scenario</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              To {parseLocalDate(seasonStats.season.actualEndDate || seasonStats.season.estimatedEndDate || seasonStats.dates.average).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </p>
           </CardContent>
         </Card>
 
@@ -227,7 +271,7 @@ export default function Dashboard() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Season Settings</DialogTitle>
+                    <DialogTitle>Season Goal</DialogTitle>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">
@@ -240,31 +284,11 @@ export default function Dashboard() {
                         placeholder="e.g. 50"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="estEnd">Estimated End Date</Label>
-                      <Input
-                        id="estEnd"
-                        type="date"
-                        value={estEndValue}
-                        onChange={(e) => setEstEndValue(e.target.value)}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Used for progress charting if season is active.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="actEnd">Actual End Date</Label>
-                      <Input
-                        id="actEnd"
-                        type="date"
-                        value={actEndValue}
-                        onChange={(e) => setActEndValue(e.target.value)}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Locks the season once finished.</p>
-                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsGoalDialogOpen(false)}>Cancel</Button>
                     <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
-                      Save Settings
+                      Save Goal
                     </Button>
                   </DialogFooter>
                 </DialogContent>
