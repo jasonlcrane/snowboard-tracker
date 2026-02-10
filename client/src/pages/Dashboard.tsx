@@ -9,14 +9,26 @@ import { WeatherAlerts } from '@/components/WeatherAlerts';
 import { Link } from 'wouter';
 import { SeasonSwitcher } from '@/components/SeasonSwitcher';
 import { useSeason } from '@/contexts/SeasonContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Edit2, Target, Trophy } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const utils = trpc.useUtils();
   const { selectedSeasonId } = useSeason();
 
-  const { data: seasonStats, isLoading: statsLoading } = trpc.badge.getSeasonStats.useQuery({ seasonId: selectedSeasonId });
+  const [goalValue, setGoalValue] = useState<string>('50');
+  const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
+
+  const { data: seasonStats, isLoading: statsLoading, refetch: refetchStats } = trpc.badge.getSeasonStats.useQuery({ seasonId: selectedSeasonId });
+  const { data: paceData, isLoading: paceLoading, refetch: refetchPace } = trpc.badge.getCumulativePace.useQuery({ seasonId: selectedSeasonId });
   const { data: weeklyData, isLoading: weeklyLoading } = trpc.badge.getWeeklyBreakdown.useQuery({ seasonId: selectedSeasonId });
   const { data: dailyData, isLoading: dailyLoading } = trpc.badge.getDailyBreakdown.useQuery({ seasonId: selectedSeasonId });
+
+  const updateGoalMutation = trpc.badge.updateSeasonGoal.useMutation();
 
   const { data: manualEntries } = trpc.manual.getManualEntries.useQuery();
   const { data: tempAnalysis } = trpc.weather.getTemperatureAnalysis.useQuery();
@@ -114,6 +126,28 @@ export default function Dashboard() {
 
   const dailyChartData = fillAllDays();
 
+  const handleUpdateGoal = async () => {
+    if (!seasonStats?.season.id) return;
+    try {
+      await updateGoalMutation.mutateAsync({
+        seasonId: seasonStats.season.id,
+        goal: parseInt(goalValue)
+      });
+      toast.success('Season goal updated!');
+      setIsGoalDialogOpen(false);
+      refetchStats();
+      refetchPace();
+    } catch (error) {
+      toast.error('Failed to update goal');
+    }
+  };
+
+  useEffect(() => {
+    if (seasonStats?.season.goal) {
+      setGoalValue(seasonStats.season.goal.toString());
+    }
+  }, [seasonStats?.season.goal]);
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -176,13 +210,45 @@ export default function Dashboard() {
         <Card className={`relative overflow-hidden transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
           {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Calendar className="w-4 h-4" /> Estimated Days Remaining
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2"><Trophy className="w-4 h-4" /> Season Goal</span>
+              <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Set Season Goal</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="goal">Target Hill Days</Label>
+                      <Input
+                        id="goal"
+                        type="number"
+                        value={goalValue}
+                        onChange={(e) => setGoalValue(e.target.value)}
+                        placeholder="e.g. 50"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsGoalDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleUpdateGoal} disabled={updateGoalMutation.isPending}>
+                      Save Goal
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{seasonStats.projections.remainingDays}</div>
-            <p className="text-xs text-muted-foreground mt-2">Until avg. close date</p>
+            <div className="text-4xl font-bold">{seasonStats.season.goal}</div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {((seasonStats.stats.totalBadgeIns / seasonStats.season.goal) * 100).toFixed(0)}% complete
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -239,6 +305,72 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Cumulative Pace Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-accent" /> Cumulative Session Pace
+            </CardTitle>
+            <CardDescription>Targeting {seasonStats.season.goal} days this season</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[350px] w-100%">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={paceData?.target}>
+                  <defs>
+                    <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="var(--muted-foreground)"
+                    tickFormatter={(val) => parseLocalDate(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    minTickGap={30}
+                  />
+                  <YAxis stroke="var(--muted-foreground)" domain={[0, 'dataMax + 10']} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                    labelFormatter={(val) => parseLocalDate(val).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="target"
+                    stroke="var(--muted-foreground)"
+                    strokeDasharray="5 5"
+                    fill="none"
+                    name="Target Pace"
+                    strokeWidth={1}
+                  />
+                  <Area
+                    type="monotone"
+                    data={paceData?.actual}
+                    dataKey="count"
+                    stroke="var(--accent)"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorActual)"
+                    name="Total Days"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="flex flex-col items-center p-3 rounded-md bg-accent/5 border border-accent/10">
+                <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Current Pace</span>
+                <span className="text-xl font-bold">{seasonStats.stats.totalBadgeIns} days</span>
+              </div>
+              <div className="flex flex-col items-center p-3 rounded-md bg-muted/5 border border-border">
+                <span className="text-xs text-muted-foreground uppercase tracking-widest">Required Avg</span>
+                <span className="text-xl font-bold">{(seasonStats.season.goal / 120 * 7).toFixed(1)} / week</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Weekly Bar Chart */}
         <Card>
           <CardHeader>

@@ -54,6 +54,7 @@ export const seasons = mysqlTable("seasons", {
   estimatedEndDate: date("estimated_end_date"),
   actualEndDate: date("actual_end_date"),
   status: mysqlEnum("status", ["active", "completed", "upcoming"]).default("active").notNull(),
+  goal: int("goal").default(50).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
