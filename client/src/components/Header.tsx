@@ -52,18 +52,6 @@ export function Header() {
                             </Button>
                         </Link>
 
-                        <Link href="/settings">
-                            <Button
-                                variant={location === "/settings" ? "secondary" : "ghost"}
-                                size="sm"
-                                className="gap-2 px-2 md:px-3"
-                                title="Settings"
-                            >
-                                <Settings className="w-4 h-4" />
-                                <span className="hidden md:inline">Settings</span>
-                            </Button>
-                        </Link>
-
                         {user?.role === 'admin' && (
                             <Link href="/admin">
                                 <Button
@@ -72,7 +60,7 @@ export function Header() {
                                     className="gap-2 px-2 md:px-3"
                                     title="Admin Panel"
                                 >
-                                    <ShieldCheck className="w-4 h-4" />
+                                    <Settings className="w-4 h-4" />
                                     <span className="hidden md:inline">Admin</span>
                                 </Button>
                             </Link>

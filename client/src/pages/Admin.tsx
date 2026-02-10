@@ -1,27 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Check, X, RefreshCw } from 'lucide-react';
+import { Loader2, Check, X, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useSeason } from '@/contexts/SeasonContext';
 
 export default function Admin() {
+  const { selectedSeasonId } = useSeason();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [isEditingCredentials, setIsEditingCredentials] = useState(false);
+  const [actEndValue, setActEndValue] = useState<string>('');
 
   const { data: credentials, isLoading: credLoading } = trpc.admin.getCredentials.useQuery();
   const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = trpc.admin.getScrapingLogs.useQuery({ limit: 50 });
+  const { data: seasonStats, refetch: refetchStats } = trpc.badge.getSeasonStats.useQuery({ seasonId: selectedSeasonId });
+
   const saveCredentialsMutation = trpc.admin.saveCredentials.useMutation();
+  const updateSeasonMutation = trpc.badge.updateSeasonSettings.useMutation();
   const triggerScrapeMutation = trpc.admin.triggerManualScrape.useMutation({
     onMutate: () => {
-      // Optimistically refetch to show the pending log immediately
-      // The backend creates the pending log first
       setTimeout(() => refetchLogs(), 500);
     },
     onSuccess: () => {
@@ -30,21 +33,11 @@ export default function Admin() {
     }
   });
 
-  // Polling for pending logs
   useEffect(() => {
-    const hasPending = logs?.some(log => log.status === 'pending');
-    let interval: NodeJS.Timeout;
-
-    if (hasPending) {
-      interval = setInterval(() => {
-        refetchLogs();
-      }, 3000);
+    if (seasonStats?.season) {
+      setActEndValue(seasonStats.season.actualEndDate || '');
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [logs, refetchLogs]);
+  }, [seasonStats?.season]);
 
   const handleSaveCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +45,6 @@ export default function Admin() {
       toast.error('Please enter both username and password');
       return;
     }
-
     try {
       await saveCredentialsMutation.mutateAsync({ username, password });
       toast.success('Credentials saved securely');
@@ -64,12 +56,17 @@ export default function Admin() {
     }
   };
 
-  const handleTriggerScrape = async () => {
+  const handleUpdateSeasonEnd = async () => {
+    if (!selectedSeasonId) return;
     try {
-      await triggerScrapeMutation.mutateAsync();
-      toast.success('Hyland data sync complete');
+      await updateSeasonMutation.mutateAsync({
+        seasonId: selectedSeasonId,
+        actualEndDate: actEndValue
+      });
+      toast.success('Season closure settings updated');
+      refetchStats();
     } catch (error) {
-      toast.error('Failed to trigger sync');
+      toast.error('Failed to update season closure');
     }
   };
 
@@ -87,272 +84,119 @@ export default function Admin() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
-        <p className="text-muted-foreground mt-2">Manage account credentials and automated data syncs</p>
+        <h1 className="text-3xl font-bold tracking-tight">Admin & Management</h1>
+        <p className="text-muted-foreground mt-2">Manage account credentials, syncs, and season status</p>
       </div>
 
-      {/* Credentials Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Credentials Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <CardTitle>Three Rivers Parks Account</CardTitle>
-              <CardDescription>Your credentials are encrypted and stored securely</CardDescription>
-            </div>
-            {!isEditingCredentials && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditingCredentials(true)}
-              >
-                {credentials ? 'Update Credentials' : 'Add Credentials'}
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isEditingCredentials ? (
-            <form onSubmit={handleSaveCredentials} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Your Three Rivers Parks username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Your Three Rivers Parks password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="px-3"
-                  >
-                    {showPassword ? 'Hide' : 'Show'}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit" disabled={saveCredentialsMutation.isPending}>
-                  {saveCredentialsMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Credentials'
-                  )}
+              {!isEditingCredentials && (
+                <Button variant="outline" size="sm" onClick={() => setIsEditingCredentials(true)}>
+                  {credentials ? 'Update' : 'Add'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setIsEditingCredentials(false)}
-                  disabled={saveCredentialsMutation.isPending}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              {credentials ? (
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-green-700 dark:text-green-400">
-                    Credentials configured and active
-                  </span>
-                </div>
-              ) : (
-                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-2">
-                  <X className="w-4 h-4 text-yellow-500" />
-                  <span className="text-sm text-yellow-700 dark:text-yellow-400">
-                    No credentials configured yet
-                  </span>
-                </div>
-              )}
-
-              {credentials && credentials.lastScrapedAt && (
-                <p className="text-sm text-muted-foreground">
-                  Last successful sync: {new Date(credentials.lastScrapedAt).toLocaleString()}
-                </p>
               )}
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Data Download Control */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Sync Controls</CardTitle>
-          <CardDescription>Manual sync of your Hyland badge-in history and weather data</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <Button onClick={handleTriggerScrape} disabled={triggerScrapeMutation.isPending}>
-              {triggerScrapeMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Syncing Hyland...
-                </>
-              ) : (
-                'Sync Hyland Data'
-              )}
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleTriggerWeatherSync}
-              disabled={syncWeatherMutation.isPending}
-            >
-              {syncWeatherMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Syncing Weather...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Sync Weather Data
-                </>
-              )}
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mt-3">
-            Hyland and weather data automatically sync daily on app load. Use these to manually refresh if needed.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Scraping Logs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Hyland Sync History</CardTitle>
-          <CardDescription>Recent Hyland data download activity and results</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {logsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin" />
-            </div>
-          ) : logs && logs.length > 0 ? (
-            <div className="space-y-3">
-              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                {(showAllLogs ? logs : logs.slice(0, 1)).map((log) => (
-                  <div key={log.id} className={`p-3 rounded-lg border border-border bg-card transition-all ${!showAllLogs ? 'ring-2 ring-accent/20' : ''}`}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          {log.status === 'success' ? (
-                            <Check className="w-4 h-4 text-green-500" />
-                          ) : log.status === 'failed' ? (
-                            <X className="w-4 h-4 text-red-500" />
-                          ) : log.status === 'pending' ? (
-                            <RefreshCw className="w-4 h-4 text-accent animate-spin" />
-                          ) : (
-                            <div className="w-4 h-4 rounded-full bg-yellow-500" />
-                          )}
-                          <span className={`font-medium text-sm capitalize ${log.status === 'pending' ? 'animate-pulse text-accent' : ''}`}>
-                            {log.status === 'pending' ? 'Syncing...' : log.status}
-                          </span>
-                          {!showAllLogs && logs.length > 1 && (
-                            <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Latest</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        {log.status === 'pending' ? (
-                          <p className="text-xs text-muted-foreground italic">Fetching data...</p>
-                        ) : (
-                          <>
-                            <p className="text-sm font-medium">{log.badgeInsAdded} added</p>
-                            <p className="text-xs text-muted-foreground">{log.badgeInsFound} found</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {log.errorMessage && (
-                      <p className="text-xs text-red-500 mt-2">{log.errorMessage}</p>
-                    )}
+            <CardDescription>Securely store your Hyland portal access</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isEditingCredentials ? (
+              <form onSubmit={handleSaveCredentials} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="flex gap-2">
+                    <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <Button type="button" variant="outline" onClick={() => setShowPassword(!showPassword)}>
+                      {showPassword ? 'Hide' : 'Show'}
+                    </Button>
                   </div>
-                ))}
-              </div>
-
-              {logs.length > 1 && (
-                <div className="flex justify-center pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllLogs(!showAllLogs)}
-                    className="text-xs text-muted-foreground hover:text-accent"
-                  >
-                    {showAllLogs ? 'Hide historical logs' : `Show ${logs.length - 1} more logs`}
-                  </Button>
                 </div>
-              )}
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={saveCredentialsMutation.isPending}>Save</Button>
+                  <Button variant="ghost" onClick={() => setIsEditingCredentials(false)}>Cancel</Button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex items-center gap-2">
+                {credentials ? (
+                  <><Check className="text-green-500 w-4 h-4" /> <span>Account Linked</span></>
+                ) : (
+                  <><X className="text-red-500 w-4 h-4" /> <span>Not Linked</span></>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Sync Controls */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Sync Controls</CardTitle>
+            <CardDescription>Manually trigger scraping of hill entries or weather</CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-4">
+            <Button onClick={() => triggerScrapeMutation.mutate()} disabled={triggerScrapeMutation.isPending}>
+              {triggerScrapeMutation.isPending ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : null}
+              Sync Hyland
+            </Button>
+            <Button variant="outline" onClick={handleTriggerWeatherSync} disabled={syncWeatherMutation.isPending}>
+              {syncWeatherMutation.isPending ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <RefreshCw className="mr-2 w-4 h-4" />}
+              Sync Weather
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Season Closure Section */}
+      <Card className="border-red-500/20 bg-red-500/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <ShieldAlert className="w-5 h-5" /> Season Closure Management
+          </CardTitle>
+          <CardDescription>Setting an actual end date marks the season as finished and freezes all calculations.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="max-w-xs space-y-2">
+            <Label htmlFor="actEnd">Actual End Date</Label>
+            <Input id="actEnd" type="date" value={actEndValue} onChange={(e) => setActEndValue(e.target.value)} />
+          </div>
+          {actEndValue && !seasonStats?.season.actualEndDate && (
+            <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+              <p className="text-sm text-muted-foreground italic leading-tight">
+                Warning: Saving this will mark the season as <strong>completed</strong>.
+              </p>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-8 text-center">No scraping logs yet</p>
           )}
+          <Button variant="destructive" onClick={handleUpdateSeasonEnd} disabled={updateSeasonMutation.isPending}>
+            {updateSeasonMutation.isPending ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : null}
+            {seasonStats?.season.actualEndDate ? 'Update Closure Date' : 'Close Season'}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* How It Works */}
-      <Card className="bg-card/50 border-border/50">
+      {/* Logs section restored simplified */}
+      <Card>
         <CardHeader>
-          <CardTitle>How It Works</CardTitle>
-          <CardDescription>Understanding the automated hill tracking system</CardDescription>
+          <CardTitle>Sync History</CardTitle>
+          <CardDescription>Recent automated and manual sync attempts</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
-              1
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">Connect Your Account</h4>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                Enter your Three Rivers Parks credentials above. They are encrypted using AES-256-GCM before being stored in the database.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
-              2
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">Automatic Sync</h4>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                A sync is automatically triggered on your first app load each day. You can also trigger it manually using the button above.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm">
-              3
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">Data & Analytics</h4>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                The dashboard calculates your visit frequency and projects your season-end totals based on historical weather patterns.
-              </p>
-            </div>
+        <CardContent>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {logs?.map(log => (
+              <div key={log.id} className="text-xs p-2 flex justify-between border-b last:border-0 border-border">
+                <span>{new Date(log.createdAt).toLocaleString()}</span>
+                <span className={log.status === 'success' ? 'text-green-500' : 'text-red-500'}>{log.status}</span>
+                <span>{log.badgeInsAdded} added</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

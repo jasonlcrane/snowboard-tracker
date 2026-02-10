@@ -8,7 +8,6 @@ import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import HistoryPage from "./pages/HistoryPage";
 import Admin from "./pages/Admin";
-import SettingsPage from "./pages/SettingsPage";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Header } from "./components/Header";
 import { AutoSyncTrigger } from "./components/AutoSyncTrigger";
@@ -22,7 +21,6 @@ function Router() {
       <Route path="/" component={() => (user ? <Dashboard /> : <LandingPage />)} />
       <Route path="/history" component={() => (user ? <HistoryPage /> : <LandingPage />)} />
       <Route path="/admin" component={() => (user?.role === 'admin' ? <Admin /> : <NotFound />)} />
-      <Route path="/settings" component={() => (user ? <SettingsPage /> : <LandingPage />)} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -9,8 +9,11 @@ import { WeatherAlerts } from '@/components/WeatherAlerts';
 import { Link } from 'wouter';
 import { SeasonSwitcher } from '@/components/SeasonSwitcher';
 import { useSeason } from '@/contexts/SeasonContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Target, Trophy } from 'lucide-react';
+import { Target, Trophy, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
@@ -25,9 +28,16 @@ export default function Dashboard() {
   const { data: manualEntries } = trpc.manual.getManualEntries.useQuery();
   const { data: tempAnalysis } = trpc.weather.getTemperatureAnalysis.useQuery();
 
+  const [goalValue, setGoalValue] = useState<string>('50');
+  const [estEndValue, setEstEndValue] = useState<string>('');
+  const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
+  const [isTimingDialogOpen, setIsTimingDialogOpen] = useState(false);
+
   const { data: credentials } = trpc.admin.getCredentials.useQuery();
   const [showGlimmer, setShowGlimmer] = useState(false);
   const [lastBadgeCount, setLastBadgeCount] = useState<number | null>(null);
+
+  const updateSeasonMutation = trpc.badge.updateSeasonSettings.useMutation();
 
   const isLoading = statsLoading || weeklyLoading || dailyLoading || paceLoading;
 
@@ -64,6 +74,37 @@ export default function Dashboard() {
     }, 30000);
     return () => clearInterval(interval);
   }, [utils]);
+
+  useEffect(() => {
+    if (seasonStats?.season) {
+      setGoalValue(seasonStats.season.goal?.toString() || '50');
+
+      const today = new Date().toISOString().split('T')[0];
+      const avgDate = seasonStats.dates?.average
+        ? new Date(seasonStats.dates.average).toISOString().split('T')[0]
+        : today;
+
+      setEstEndValue(seasonStats.season.estimatedEndDate || avgDate);
+    }
+  }, [seasonStats?.season, seasonStats?.dates]);
+
+  const handleUpdateSettings = async () => {
+    if (!seasonStats?.season.id) return;
+    try {
+      await updateSeasonMutation.mutateAsync({
+        seasonId: seasonStats.season.id,
+        goal: parseInt(goalValue),
+        estimatedEndDate: estEndValue
+      });
+      toast.success('Season settings updated!');
+      setIsGoalDialogOpen(false);
+      setIsTimingDialogOpen(false);
+      utils.badge.getSeasonStats.invalidate();
+      utils.badge.getCumulativePace.invalidate();
+    } catch (error) {
+      toast.error('Failed to update settings');
+    }
+  };
 
 
   if (isLoading) {
@@ -157,6 +198,36 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
               <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Projected Hill Days</span>
+              <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Estimated Season End</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="estEnd">Estimated End Date</Label>
+                      <Input
+                        id="estEnd"
+                        type="date"
+                        value={estEndValue}
+                        onChange={(e) => setEstEndValue(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Adjusting this will update your Required Weekly Average.</p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
+                      Save Date
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -185,6 +256,36 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
               <span className="flex items-center gap-2"><Trophy className="w-4 h-4" /> Season Goal</span>
+              <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Season Goal</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="goal">Target Hill Days</Label>
+                      <Input
+                        id="goal"
+                        type="number"
+                        value={goalValue}
+                        onChange={(e) => setGoalValue(e.target.value)}
+                        placeholder="e.g. 50"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsGoalDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
+                      Save Goal
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardTitle>
           </CardHeader>
           <CardContent>
