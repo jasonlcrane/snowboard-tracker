@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [showGlimmer, setShowGlimmer] = useState(false);
   const [lastBadgeCount, setLastBadgeCount] = useState<number | null>(null);
 
-  const isLoading = statsLoading || weeklyLoading || dailyLoading;
+  const isLoading = statsLoading || weeklyLoading || dailyLoading || paceLoading;
 
   // Trigger glimmer when total badge-ins change
   useEffect(() => {

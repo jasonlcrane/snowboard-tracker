@@ -20,9 +20,42 @@ export const badgeRouter = router({
         season = await getActiveSeason();
       }
 
-      if (!season) return null;
+      if (!season) {
+        if (process.env.NODE_ENV === 'development') {
+          const today = new Date();
+          const startDate = new Date(today.getFullYear(), 10, 15);
+          const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const { conservative, average, optimistic } = estimateSeasonEndDates();
+          const projections = calculateProjections(42, daysElapsed, conservative, average, optimistic);
+          return {
+            season: { id: 1, name: '2025/2026 Season (Mock)', startDate: startDate.toISOString().split('T')[0], status: 'active', goal: 50 },
+            stats: { totalBadgeIns: 42, daysElapsed, visitRate: projections.visitRate, visitRatePerWeek: projections.visitRate * 7 },
+            projections: { conservative: projections.conservativeTotal, average: projections.averageTotal, optimistic: projections.optimisticTotal, remainingDays: projections.remainingDays },
+            dates: { conservative, average, optimistic },
+            lastUpdated: today,
+          };
+        }
+        return null;
+      }
 
       const badgeInsRows = await getBadgeInsBySeason(season.id);
+
+      // If we have no real data and are in dev, provide some mock stats
+      if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !db) {
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), 10, 15);
+        const daysElapsed = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const { conservative, average, optimistic } = estimateSeasonEndDates();
+        const projections = calculateProjections(42, daysElapsed, conservative, average, optimistic);
+        return {
+          season: { id: season.id, name: season.name, startDate: season.startDate, status: season.status, goal: 50 },
+          stats: { totalBadgeIns: 42, daysElapsed, visitRate: projections.visitRate, visitRatePerWeek: projections.visitRate * 7 },
+          projections: { conservative: projections.conservativeTotal, average: projections.averageTotal, optimistic: projections.optimisticTotal, remainingDays: projections.remainingDays },
+          dates: { conservative, average, optimistic },
+          lastUpdated: today,
+        };
+      }
+
       const projection = await getLatestProjection(season.id);
 
       const today = new Date();
@@ -73,7 +106,15 @@ export const badgeRouter = router({
 
   getAllSeasons: publicProcedure.query(async () => {
     const db = await getDb();
-    if (!db) return [];
+    if (!db) {
+      if (process.env.NODE_ENV === 'development') {
+        return [
+          { id: 1, name: '2025/2026 Season (Mock)', status: 'active', startDate: '2025-07-01' },
+          { id: 2, name: '2024/2025 Season (Mock Arch)', status: 'completed', startDate: '2024-07-01' },
+        ];
+      }
+      return [];
+    }
     return db.select().from(seasons).orderBy(desc(seasons.startDate));
   }),
 
@@ -88,6 +129,15 @@ export const badgeRouter = router({
       }
 
       const badgeInsRows = await getBadgeInsBySeason(seasonId);
+
+      if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !(await getDb())) {
+        return Array.from({ length: 8 }).map((_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (i * 7));
+          return { week: date.toISOString().split('T')[0], count: Math.floor(Math.random() * 5) + 1, date };
+        }).reverse();
+      }
+
       const badgeInDates = badgeInsRows.map(b => new Date(b.badgeInDate));
       const weeklyCounts = getWeeklyCounts(badgeInDates);
 
@@ -111,6 +161,15 @@ export const badgeRouter = router({
       }
 
       const badgeInsRows = await getBadgeInsBySeason(seasonId);
+
+      if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !(await getDb())) {
+        return Array.from({ length: 30 }).map((_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          return { day: date.toISOString().split('T')[0], count: Math.random() > 0.7 ? 1 : 0, date };
+        }).reverse();
+      }
+
       const badgeInDates = badgeInsRows.map(b => new Date(b.badgeInDate));
       const dailyCounts = getDailyCounts(badgeInDates);
 
@@ -134,6 +193,21 @@ export const badgeRouter = router({
         const season = await getActiveSeason();
         if (!season) return [];
         seasonId = season.id;
+      }
+
+      const badgeInsRows = await getBadgeInsBySeason(seasonId);
+
+      if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !db) {
+        return Array.from({ length: 5 }).map((_, i) => ({
+          id: i + 1,
+          badgeInDate: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
+          badgeInTime: '10:00 AM',
+          passType: i % 2 === 0 ? 'Hyland Hills' : 'Buck Hill',
+          isManual: i % 2 === 0 ? 0 : 1,
+          notes: i % 2 === 0 ? '' : 'Mock entry',
+          tempHigh: 25 - i * 2,
+          conditions: 'Snowing',
+        }));
       }
 
       const badgeInsWithWeather = await db.select({
@@ -197,22 +271,39 @@ export const badgeRouter = router({
       }
 
       const badgeInsRows = await getBadgeInsBySeason(seasonId);
-      const countsByDate = badgeInsRows.reduce((acc, b) => {
-        const date = typeof b.badgeInDate === 'string' ? b.badgeInDate : b.badgeInDate.toISOString().split('T')[0];
-        acc[date] = (acc[date] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
 
-      const sortedDates = Object.keys(countsByDate).sort();
       let runningTotal = 0;
+      let actualPace = [];
 
-      const actualPace = sortedDates.map(date => {
-        runningTotal += countsByDate[date];
-        return {
-          date,
-          count: runningTotal,
-        };
-      });
+      if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !(await getDb())) {
+        // Provide some mock actual data
+        const today = new Date();
+        actualPace = Array.from({ length: 20 }).map((_, i) => {
+          const d = new Date();
+          d.setDate(today.getDate() - (20 - i));
+          runningTotal += Math.random() > 0.5 ? 1 : 0;
+          return {
+            date: d.toISOString().split('T')[0],
+            count: runningTotal,
+          };
+        });
+      } else {
+        const countsByDate = badgeInsRows.reduce((acc, b) => {
+          const date = typeof b.badgeInDate === 'string' ? b.badgeInDate : b.badgeInDate.toISOString().split('T')[0];
+          acc[date] = (acc[date] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const sortedDates = Object.keys(countsByDate).sort();
+
+        actualPace = sortedDates.map(date => {
+          runningTotal += countsByDate[date];
+          return {
+            date,
+            count: runningTotal,
+          };
+        });
+      }
 
       const start = new Date(season.startDate);
       const estimatedEnd = (season as any).actualEndDate || (season as any).estimatedEndDate || new Date(start.getFullYear() + 1, 3, 15);

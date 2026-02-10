@@ -43,6 +43,13 @@
       "when": 1769927145542,
       "tag": "0005_round_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1770692324200,
+      "tag": "0006_sour_masque",
+      "breakpoints": true
     }
   ]
 }
