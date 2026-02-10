@@ -256,11 +256,12 @@ export default function Dashboard() {
 
         <Card className={`relative overflow-hidden transition-all duration-500 ${isGoalMet ? 'ring-2 ring-yellow-500/50 bg-yellow-500/5' : ''} ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
           {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
-          {isGoalMet && <div className="absolute top-0 right-0 p-2"><Trophy className="w-6 h-6 text-yellow-500 animate-pulse" /></div>}
-          <CardHeader className="pb-3">
+          {isGoalMet && <div className="absolute -bottom-6 -right-6 p-2 pointer-events-none"><Trophy className="w-32 h-32 text-yellow-500/10 rotate-12" /></div>}
+          <CardHeader className="pb-3 relative z-10">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
               <span className={`flex items-center gap-2 ${isGoalMet ? 'text-yellow-600 font-bold' : ''}`}>
-                <Target className={`w-4 h-4 ${isGoalMet ? 'text-yellow-500' : ''}`} />
+                <Trophy className={`w-4 h-4 ${isGoalMet ? 'text-yellow-500' : 'hidden'}`} />
+                <Target className={`w-4 h-4 ${isGoalMet ? 'hidden' : ''}`} />
                 {isGoalMet ? 'Goal Achieved!' : 'Season Goal'}
               </span>
               <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
@@ -422,22 +423,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Tracking Note */}
-      <div className="bg-accent/5 border border-accent/20 rounded-lg p-6 flex flex-col gap-4 text-sm text-foreground/90 items-center text-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
-            ℹ️
-          </div>
-          <p className="max-w-2xl">
-            <strong>Hyland Hills</strong> visits are automatically synced daily on app load. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
-          </p>
-        </div>
-        {credentials?.lastScrapedAt && (
-          <div className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/10 border border-muted/20 px-3 py-1.5 rounded-full">
-            Hyland Synced: {new Date(credentials.lastScrapedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-          </div>
-        )}
-      </div>
+
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -480,6 +466,7 @@ export default function Dashboard() {
                     fill="none"
                     name="Target Pace"
                     strokeWidth={1}
+                    legendType="plainline"
                     connectNulls
                   />
                   <Area
@@ -490,6 +477,7 @@ export default function Dashboard() {
                     fillOpacity={1}
                     fill="url(#colorActual)"
                     name="Total Days"
+                    legendType="square"
                     connectNulls
                   />
                 </AreaChart>
@@ -497,7 +485,12 @@ export default function Dashboard() {
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div className="flex flex-col items-center p-3 rounded-md bg-accent/5 border border-accent/10">
-                <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Current Pace</span>
+                <span className="text-xs text-center text-muted-foreground uppercase tracking-widest font-bold mb-1">
+                  Current Pace<br />
+                  <span className="text-[10px] font-normal opacity-70">
+                    (for {parseLocalDate(seasonStats.season.estimatedEndDate || seasonStats.dates.average).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} closing)
+                  </span>
+                </span>
                 <span className="text-xl font-bold">{seasonStats.projections.custom || seasonStats.projections.average} days</span>
               </div>
               <div className={`flex flex-col items-center p-3 rounded-md border ${isGoalMet ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-muted/5 border-border'}`}>
@@ -508,7 +501,7 @@ export default function Dashboard() {
                   </>
                 ) : (
                   <>
-                    <span className="text-xs text-muted-foreground uppercase tracking-widest">Goal Pace</span>
+                    <span className="text-xs text-muted-foreground uppercase tracking-widest text-center">Pace Target<br /><span className="text-[10px] font-normal opacity-70">to Hit Goal</span></span>
                     <span className="text-xl font-bold">{((seasonStats.stats as any).neededVisitRatePerWeek ?? 0).toFixed(1)} / week</span>
                   </>
                 )}
@@ -529,8 +522,8 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="week" stroke="var(--muted-foreground)" />
                 <YAxis stroke="var(--muted-foreground)" />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }} />
-                <Bar dataKey="count" fill="var(--chart-1)" radius={[8, 8, 0, 0]} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }} cursor={{ fill: 'transparent' }} />
+                <Bar dataKey="count" fill="var(--chart-1)" radius={[8, 8, 0, 0]} activeBar={{ fill: 'var(--accent)' }} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -553,6 +546,7 @@ export default function Dashboard() {
                   <YAxis stroke="var(--muted-foreground)" />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}
+                    cursor={{ fill: 'transparent' }}
                     formatter={(value: any, name: string) => {
                       if (name === 'count') return [value, 'Hill Days'];
                       if (name === 'avgTemp') return [`${value}°F`, 'Avg Temp'];
@@ -564,6 +558,7 @@ export default function Dashboard() {
                     fill="var(--chart-2)"
                     radius={[8, 8, 0, 0]}
                     label={{ position: 'top', fill: 'var(--foreground)' }}
+                    activeBar={{ fill: 'var(--accent)' }}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -594,12 +589,29 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="day" stroke="var(--muted-foreground)" />
               <YAxis stroke="var(--muted-foreground)" />
-              <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }} />
-              <Bar dataKey="count" fill="var(--chart-3)" radius={[8, 8, 0, 0]} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }} cursor={{ fill: 'transparent' }} />
+              <Bar dataKey="count" fill="var(--chart-3)" radius={[8, 8, 0, 0]} activeBar={{ fill: 'var(--accent)' }} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* Tracking Note */}
+      <div className="bg-accent/5 border border-accent/20 rounded-lg p-6 flex flex-col gap-4 text-sm text-foreground/90 items-center text-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
+            ℹ️
+          </div>
+          <p className="max-w-2xl">
+            <strong>Hyland Hills</strong> visits are automatically synced daily on app load. For all other locations, use the <strong>Add Hill Day</strong> button to record your session as a <strong>Non-Hyland</strong> day.
+          </p>
+        </div>
+        {credentials?.lastScrapedAt && (
+          <div className="text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/10 border border-muted/20 px-3 py-1.5 rounded-full">
+            Hyland Synced: {new Date(credentials.lastScrapedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
