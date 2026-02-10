@@ -84,12 +84,16 @@ export default function Dashboard() {
 
       // Prioritize existing custom date if available
       const existingEstDate = seasonStats.season.estimatedEndDate;
+      const formattedExistingDate = existingEstDate instanceof Date
+        ? existingEstDate.toISOString().split('T')[0]
+        : existingEstDate;
+
       const today = new Date().toISOString().split('T')[0];
       const avgDate = seasonStats.dates?.average
         ? new Date(seasonStats.dates.average).toISOString().split('T')[0]
         : today;
 
-      setEstEndValue(existingEstDate || avgDate);
+      setEstEndValue(formattedExistingDate || avgDate);
     }
   }, [seasonStats?.season, seasonStats?.dates]);
 
