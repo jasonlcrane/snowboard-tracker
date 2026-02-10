@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Header } from "./components/Header";
 import { AutoSyncTrigger } from "./components/AutoSyncTrigger";
+import { SeasonProvider } from "./contexts/SeasonContext";
 
 function Router() {
   const { user } = useAuth();
@@ -31,14 +32,16 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <div className="min-h-screen bg-background flex flex-col">
-            <Toaster />
-            <AutoSyncTrigger />
-            <Header />
-            <main className="flex-1">
-              <Router />
-            </main>
-          </div>
+          <SeasonProvider>
+            <div className="min-h-screen bg-background flex flex-col">
+              <Toaster />
+              <AutoSyncTrigger />
+              <Header />
+              <main className="flex-1">
+                <Router />
+              </main>
+            </div>
+          </SeasonProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

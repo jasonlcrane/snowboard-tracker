@@ -7,12 +7,17 @@ import { ManualEntryDialog } from '@/components/ManualEntryDialog';
 import { ForecastWidget } from '@/components/ForecastWidget';
 import { WeatherAlerts } from '@/components/WeatherAlerts';
 import { Link } from 'wouter';
+import { SeasonSwitcher } from '@/components/SeasonSwitcher';
+import { useSeason } from '@/contexts/SeasonContext';
 
 export default function Dashboard() {
   const utils = trpc.useUtils();
-  const { data: seasonStats, isLoading: statsLoading } = trpc.badge.getSeasonStats.useQuery();
-  const { data: weeklyData, isLoading: weeklyLoading } = trpc.badge.getWeeklyBreakdown.useQuery();
-  const { data: dailyData, isLoading: dailyLoading } = trpc.badge.getDailyBreakdown.useQuery();
+  const { selectedSeasonId } = useSeason();
+
+  const { data: seasonStats, isLoading: statsLoading } = trpc.badge.getSeasonStats.useQuery({ seasonId: selectedSeasonId });
+  const { data: weeklyData, isLoading: weeklyLoading } = trpc.badge.getWeeklyBreakdown.useQuery({ seasonId: selectedSeasonId });
+  const { data: dailyData, isLoading: dailyLoading } = trpc.badge.getDailyBreakdown.useQuery({ seasonId: selectedSeasonId });
+
   const { data: manualEntries } = trpc.manual.getManualEntries.useQuery();
   const { data: tempAnalysis } = trpc.weather.getTemperatureAnalysis.useQuery();
 
@@ -111,6 +116,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 p-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <SeasonSwitcher />
+          <p className="text-muted-foreground mt-1">Unified Hill Day Tracking & Projections</p>
+        </div>
+      </div>
+
       <ForecastWidget />
       <WeatherAlerts />
 

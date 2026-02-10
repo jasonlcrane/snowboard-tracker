@@ -2,6 +2,7 @@ import { eq, and, gte, lte, asc, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, badgeIns, InsertBadgeIn, seasons, InsertSeason, projections, InsertProjection, adminCredentials, InsertAdminCredential, scrapingLogs, InsertScrapingLog, weatherCache, InsertWeatherCache } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { getSeasonInfoForDate } from './utils';
 
 import mysql from "mysql2/promise";
 
@@ -158,6 +159,34 @@ export async function createSeason(data: InsertSeason) {
   if (!db) throw new Error("Database not available");
   const result = await db.insert(seasons).values(data);
   return result;
+}
+
+export async function getOrCreateSeasonForDate(date: string | Date): Promise<number> {
+  const db = await getDb();
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') return 1;
+    throw new Error("Database not available");
+  }
+
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  // Use UTC dates for season calculation to avoid timezone shifts
+  const utcDate = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate()));
+  const { name, startDate } = getSeasonInfoForDate(utcDate);
+
+  // Check if season exists
+  const existing = await db.select().from(seasons).where(eq(seasons.name, name)).limit(1);
+  if (existing[0]) {
+    return existing[0].id;
+  }
+
+  // Create new season
+  const [result] = await db.insert(seasons).values({
+    name,
+    startDate: new Date(startDate) as any,
+    status: 'active',
+  });
+
+  return result.insertId;
 }
 
 // Projection queries

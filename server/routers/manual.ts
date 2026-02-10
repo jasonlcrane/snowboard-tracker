@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../_core/trpc';
-import { addManualBadgeIn, getManualBadgeIns, deleteManualBadgeIn, updateManualBadgeIn, getActiveSeason, getUniqueHillNames } from '../db';
+import { addManualBadgeIn, getManualBadgeIns, deleteManualBadgeIn, updateManualBadgeIn, getActiveSeason, getUniqueHillNames, getOrCreateSeasonForDate } from '../db';
 
 export const manualRouter = router({
   addManualEntry: protectedProcedure
@@ -12,16 +12,13 @@ export const manualRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const season = await getActiveSeason();
-      if (!season) {
-        throw new Error('No active season found');
-      }
-
       const dateObj = new Date(input.badgeInDate);
       const dateStr = dateObj.toISOString().split('T')[0];
 
+      const seasonId = await getOrCreateSeasonForDate(dateStr);
+
       await addManualBadgeIn({
-        seasonId: season.id,
+        seasonId: seasonId as any,
         badgeInDate: dateStr as any,
         passType: input.hill,
         isManual: 1,

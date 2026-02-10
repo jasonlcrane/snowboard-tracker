@@ -5,9 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Trash2, MapPin, Thermometer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { SeasonSwitcher } from '@/components/SeasonSwitcher';
+import { useSeason } from '@/contexts/SeasonContext';
 
 export default function HistoryPage() {
-    const { data: badgeIns, isLoading, refetch } = trpc.badge.getAllBadgeIns.useQuery();
+    const { selectedSeasonId } = useSeason();
+    const { data: badgeIns, isLoading, refetch } = trpc.badge.getAllBadgeIns.useQuery({ seasonId: selectedSeasonId });
     const deleteManualMutation = trpc.manual.deleteManualEntry.useMutation();
 
     const handleDelete = async (id: number) => {
@@ -31,9 +34,11 @@ export default function HistoryPage() {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-5xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-black tracking-tighter mb-2">Hill Day History</h1>
-                <p className="text-muted-foreground">Detailed log of all snowboarding sessions this season.</p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <SeasonSwitcher />
+                    <p className="text-muted-foreground mt-1">Detailed log of all snowboarding sessions for this season.</p>
+                </div>
             </div>
 
             <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
