@@ -79,10 +79,17 @@ export default function Dashboard() {
   useEffect(() => {
     if (seasonStats?.season) {
       setGoalValue(seasonStats.season.goal?.toString() || '50');
-      setEstEndValue(seasonStats.season.estimatedEndDate || '');
-      setActEndValue(seasonStats.season.actualEndDate || '');
+
+      const today = new Date().toISOString().split('T')[0];
+      const avgDate = seasonStats.dates?.average
+        ? new Date(seasonStats.dates.average).toISOString().split('T')[0]
+        : today;
+
+      setEstEndValue(seasonStats.season.estimatedEndDate || avgDate);
+      // We pre-fill actual end date with today to provide the correct year context
+      setActEndValue(seasonStats.season.actualEndDate || today);
     }
-  }, [seasonStats?.season]);
+  }, [seasonStats?.season, seasonStats?.dates]);
 
 
   if (isLoading) {
