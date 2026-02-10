@@ -75,16 +75,21 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [utils]);
 
+  // Helper to check if goal is met
+  const isGoalMet = seasonStats?.season.goal && seasonStats.stats.totalBadgeIns >= seasonStats.season.goal;
+
   useEffect(() => {
     if (seasonStats?.season) {
       setGoalValue(seasonStats.season.goal?.toString() || '50');
 
+      // Prioritize existing custom date if available
+      const existingEstDate = seasonStats.season.estimatedEndDate;
       const today = new Date().toISOString().split('T')[0];
       const avgDate = seasonStats.dates?.average
         ? new Date(seasonStats.dates.average).toISOString().split('T')[0]
         : today;
 
-      setEstEndValue(seasonStats.season.estimatedEndDate || avgDate);
+      setEstEndValue(existingEstDate || avgDate);
     }
   }, [seasonStats?.season, seasonStats?.dates]);
 
@@ -245,11 +250,15 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className={`relative overflow-hidden transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
+        <Card className={`relative overflow-hidden transition-all duration-500 ${isGoalMet ? 'ring-2 ring-yellow-500/50 bg-yellow-500/5' : ''} ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
           {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
+          {isGoalMet && <div className="absolute top-0 right-0 p-2"><Trophy className="w-6 h-6 text-yellow-500 animate-pulse" /></div>}
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2"><Trophy className="w-4 h-4" /> Season Goal</span>
+              <span className={`flex items-center gap-2 ${isGoalMet ? 'text-yellow-600 font-bold' : ''}`}>
+                <Target className={`w-4 h-4 ${isGoalMet ? 'text-yellow-500' : ''}`} />
+                {isGoalMet ? 'Goal Achieved!' : 'Season Goal'}
+              </span>
               <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
@@ -283,8 +292,8 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{seasonStats.season.goal}</div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <div className={`text-4xl font-bold ${isGoalMet ? 'text-yellow-600' : ''}`}>{seasonStats.season.goal}</div>
+            <p className={`text-xs mt-2 ${isGoalMet ? 'text-yellow-600/80 font-medium' : 'text-muted-foreground'}`}>
               {((seasonStats.stats.totalBadgeIns / seasonStats.season.goal) * 100).toFixed(0)}% complete
             </p>
           </CardContent>
@@ -485,11 +494,20 @@ export default function Dashboard() {
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div className="flex flex-col items-center p-3 rounded-md bg-accent/5 border border-accent/10">
                 <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Current Pace</span>
-                <span className="text-xl font-bold">{seasonStats.stats.totalBadgeIns} days</span>
+                <span className="text-xl font-bold">{seasonStats.projections.custom || seasonStats.projections.average} days</span>
               </div>
-              <div className="flex flex-col items-center p-3 rounded-md bg-muted/5 border border-border">
-                <span className="text-xs text-muted-foreground uppercase tracking-widest">Required Avg</span>
-                <span className="text-xl font-bold">{((seasonStats.stats as any).neededVisitRatePerWeek ?? 0).toFixed(1)} / week</span>
+              <div className={`flex flex-col items-center p-3 rounded-md border ${isGoalMet ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-muted/5 border-border'}`}>
+                {isGoalMet ? (
+                  <>
+                    <span className="text-xs text-yellow-600 uppercase tracking-widest font-bold">Goal Status</span>
+                    <span className="text-xl font-bold text-yellow-600">Goal Achieved! 🏆</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs text-muted-foreground uppercase tracking-widest">Goal Pace</span>
+                    <span className="text-xl font-bold">{((seasonStats.stats as any).neededVisitRatePerWeek ?? 0).toFixed(1)} / week</span>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>

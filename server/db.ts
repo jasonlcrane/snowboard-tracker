@@ -122,13 +122,40 @@ export async function getUserById(id: number) {
 // Badge-in queries
 export async function getBadgeInsBySeason(seasonId: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      const today = new Date();
+      // Generate some mock scans
+      return Array.from({ length: 45 }).map((_, i) => {
+        const d = new Date(today.getFullYear(), 10, 15); // Start mid-Nov
+        d.setDate(d.getDate() + (i * 2)); // Every other day roughly
+        return {
+          id: i + 1,
+          seasonId,
+          badgeInDate: d.toISOString().split('T')[0],
+          badgeInTime: '18:30:00',
+          passType: i % 5 === 0 ? 'Buck Hill' : 'Hyland Hills',
+          isManual: i % 5 === 0 ? 1 : 0,
+          notes: i % 5 === 0 ? 'Manual entry' : null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any;
+      });
+    }
+    return [];
+  }
   return db.select().from(badgeIns).where(eq(badgeIns.seasonId, seasonId));
 }
 
 export async function addBadgeIn(data: InsertBadgeIn) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock addBadgeIn:", data);
+      return;
+    }
+    throw new Error("Database not available");
+  }
   await db.insert(badgeIns).values(data).onDuplicateKeyUpdate({
     set: {
       updatedAt: new Date(),
@@ -145,7 +172,11 @@ export async function getActiveSeason() {
         name: "2025/2026 Season",
         startDate: "2025-11-15",
         status: "active" as const,
-        goal: 50
+        goal: 50,
+        estimatedEndDate: null,
+        actualEndDate: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
     }
     return null;
@@ -218,7 +249,23 @@ export async function getOrCreateSeasonForDate(date: string | Date): Promise<num
 // Projection queries
 export async function getLatestProjection(seasonId: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        id: 1,
+        seasonId,
+        projectionDate: new Date().toISOString().split('T')[0],
+        conservativeTotal: 40,
+        averageTotal: 48,
+        optimisticTotal: 55,
+        currentTotal: 30,
+        visitRate: "3.5",
+        estimatedEndDate: null,
+        createdAt: new Date()
+      } as any;
+    }
+    return null;
+  }
   const result = await db.select().from(projections)
     .where(eq(projections.seasonId, seasonId))
     .orderBy((t) => t.projectionDate)
@@ -228,21 +275,48 @@ export async function getLatestProjection(seasonId: number) {
 
 export async function saveProjection(data: InsertProjection) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock saveProjection:", data);
+      return;
+    }
+    throw new Error("Database not available");
+  }
   await db.insert(projections).values(data);
 }
 
 // Credential queries
 export async function getAdminCredentials(userId: number) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        id: 1,
+        userId,
+        encryptedUsername: "mock",
+        encryptedPassword: "mock",
+        accountType: "three_rivers_parks",
+        isActive: 1,
+        lastScrapedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      } as any;
+    }
+    return null;
+  }
   const result = await db.select().from(adminCredentials).where(eq(adminCredentials.userId, userId)).limit(1);
   return result[0] || null;
 }
 
 export async function saveAdminCredentials(data: InsertAdminCredential) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock saveAdminCredentials:", data);
+      return;
+    }
+    throw new Error("Database not available");
+  }
   await db.insert(adminCredentials).values(data).onDuplicateKeyUpdate({
     set: {
       encryptedUsername: data.encryptedUsername,
@@ -254,21 +328,46 @@ export async function saveAdminCredentials(data: InsertAdminCredential) {
 
 export async function updateAdminCredentialScrapeTime(id: number, date: Date) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock updateAdminCredentialScrapeTime:", id, date);
+      return;
+    }
+    throw new Error("Database not available");
+  }
   await db.update(adminCredentials).set({ lastScrapedAt: date }).where(eq(adminCredentials.id, id));
 }
 
 // Scraping log queries
 export async function addScrapingLog(data: InsertScrapingLog) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock addScrapingLog:", data);
+      return 123;
+    }
+    throw new Error("Database not available");
+  }
   const [result] = await db.insert(scrapingLogs).values(data);
   return result.insertId;
 }
 
 export async function getScrapingLogs(credentialId: number, limit = 50) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      return Array.from({ length: 5 }).map((_, i) => ({
+        id: i + 1,
+        credentialId,
+        status: i === 0 ? 'success' : 'pending',
+        badgeInsFound: 42,
+        badgeInsAdded: 0,
+        errorMessage: null,
+        createdAt: new Date(Date.now() - i * 60000)
+      })) as any;
+    }
+    return [];
+  }
   return db.select().from(scrapingLogs)
     .where(eq(scrapingLogs.credentialId, credentialId))
     .orderBy(desc(scrapingLogs.createdAt))
@@ -277,7 +376,13 @@ export async function getScrapingLogs(credentialId: number, limit = 50) {
 
 export async function updateScrapingLog(id: number, data: Partial<InsertScrapingLog>) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Database] Mock updateScrapingLog:", id, data);
+      return;
+    }
+    throw new Error("Database not available");
+  }
   await db.update(scrapingLogs).set(data).where(eq(scrapingLogs.id, id));
 }
 
@@ -299,7 +404,17 @@ export async function getManualBadgeIns(seasonId: number) {
   const db = await getDb();
   if (!db) {
     if (process.env.NODE_ENV === 'development') {
-      return []; // Return empty for now, or mock data if needed
+      return Array.from({ length: 3 }).map((_, i) => ({
+        id: 100 + i,
+        seasonId,
+        badgeInDate: new Date().toISOString().split('T')[0],
+        badgeInTime: '',
+        passType: 'Buck Hill',
+        isManual: 1,
+        notes: 'Mock manual entry',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })) as any;
     }
     return [];
   }
@@ -352,7 +467,21 @@ export async function updateManualBadgeIn(id: number, data: Partial<InsertBadgeI
 // Weather cache queries
 export async function getWeatherForDate(dateStr: string) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        date: dateStr,
+        tempHigh: "25.5",
+        tempLow: "10.2",
+        snowfall: "2.00",
+        conditions: "Light Snow",
+        source: "mock",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      } as any;
+    }
+    return null;
+  }
   // Convert string to Date for comparison
   const result = await db.select().from(weatherCache)
     .where(eq(weatherCache.date, new Date(dateStr)))
@@ -362,7 +491,26 @@ export async function getWeatherForDate(dateStr: string) {
 
 export async function getWeatherRange(startDate: string, endDate: string) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    if (process.env.NODE_ENV === 'development') {
+      // Generate 20 days of mock weather
+      return Array.from({ length: 20 }).map((_, i) => {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        return {
+          date: d.toISOString().split('T')[0],
+          tempHigh: (20 + (i % 10)).toFixed(2),
+          tempLow: (10 + (i % 10)).toFixed(2),
+          snowfall: (i % 3 === 0 ? 1.5 : 0).toFixed(2),
+          conditions: i % 3 === 0 ? "Snow" : "Cloudy",
+          source: "mock",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as any;
+      });
+    }
+    return [];
+  }
   // Convert strings to Dates for comparison
   return db.select().from(weatherCache)
     .where(and(
