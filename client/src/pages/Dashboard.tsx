@@ -119,7 +119,6 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <SeasonSwitcher />
-          <p className="text-muted-foreground mt-1">Unified Hill Day Tracking & Projections</p>
         </div>
       </div>
 

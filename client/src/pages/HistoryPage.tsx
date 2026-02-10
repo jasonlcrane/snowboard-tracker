@@ -37,7 +37,6 @@ export default function HistoryPage() {
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <SeasonSwitcher />
-                    <p className="text-muted-foreground mt-1">Detailed log of all snowboarding sessions for this season.</p>
                 </div>
             </div>
 
