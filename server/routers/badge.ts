@@ -72,8 +72,11 @@ export const badgeRouter = router({
         conservative,
         average,
         optimistic,
-        season.status === 'active' ? today : new Date(season.actualEndDate || season.estimatedEndDate || today)
+        season.status === 'active' ? today : new Date((season as any).actualEndDate || (season as any).estimatedEndDate || today)
       );
+
+      const remainingGoal = Math.max(0, ((season as any).goal || 50) - badgeInsRows.length);
+      const neededVisitRate = projections.remainingDays > 0 ? (remainingGoal / projections.remainingDays) : 0;
 
       return {
         season: {
@@ -88,6 +91,8 @@ export const badgeRouter = router({
           daysElapsed,
           visitRate: projections.visitRate,
           visitRatePerWeek: projections.visitRate * 7,
+          neededVisitRate: neededVisitRate,
+          neededVisitRatePerWeek: neededVisitRate * 7,
         },
         projections: {
           conservative: projections.conservativeTotal,
@@ -254,83 +259,71 @@ export const badgeRouter = router({
         if (!season) {
           if (process.env.NODE_ENV === 'development') {
             const today = new Date();
-            const data = Array.from({ length: 30 }).map((_, i) => {
-              const d = new Date();
-              d.setDate(today.getDate() - (30 - i));
-              return { date: d.toISOString().split('T')[0], count: Math.floor(i * 1.5) };
+            const data = Array.from({ length: 120 }).map((_, i) => {
+              const d = new Date(today.getFullYear(), 10, 15);
+              d.setDate(d.getDate() + i);
+              const dateStr = d.toISOString().split('T')[0];
+              const isPast = d <= today;
+              return {
+                date: dateStr,
+                count: isPast ? Math.floor(i * 0.8) : undefined,
+                target: (50 / 120) * i
+              };
             });
-            const target = Array.from({ length: 120 }).map((_, i) => {
-              const d = new Date();
-              d.setDate(today.getDate() - 30 + i);
-              return { date: d.toISOString().split('T')[0], target: (50 / 120) * i };
-            });
-            return { actual: data, target, goal: 50 };
+            return { combined: data, goal: 50 };
           }
-          return { actual: [], target: [], goal: 50 };
+          return { combined: [], goal: 50 };
         }
         seasonId = season.id;
       } else {
-        if (!db) return { actual: [], target: [], goal: 50 };
+        if (!db) return { combined: [], goal: 50 };
         const result = await db.select().from(seasons).where(eq(seasons.id, seasonId)).limit(1);
         season = result[0];
       }
 
       const badgeInsRows = await getBadgeInsBySeason(seasonId);
-
-      let runningTotal = 0;
-      let actualPace = [];
-
-      if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !(await getDb())) {
-        // Provide some mock actual data
-        const today = new Date();
-        actualPace = Array.from({ length: 20 }).map((_, i) => {
-          const d = new Date();
-          d.setDate(today.getDate() - (20 - i));
-          runningTotal += Math.random() > 0.5 ? 1 : 0;
-          return {
-            date: d.toISOString().split('T')[0],
-            count: runningTotal,
-          };
-        });
-      } else {
-        const countsByDate = badgeInsRows.reduce((acc, b) => {
-          const date = typeof b.badgeInDate === 'string' ? b.badgeInDate : b.badgeInDate.toISOString().split('T')[0];
-          acc[date] = (acc[date] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-
-        const sortedDates = Object.keys(countsByDate).sort();
-
-        actualPace = sortedDates.map(date => {
-          runningTotal += countsByDate[date];
-          return {
-            date,
-            count: runningTotal,
-          };
-        });
-      }
-
-      const start = new Date(season.startDate);
-      const estimatedEnd = (season as any).actualEndDate || (season as any).estimatedEndDate || new Date(start.getFullYear() + 1, 3, 15);
-      const end = new Date(estimatedEnd);
-
-      const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
       const goal = (season as any).goal || 50;
 
-      const targetPace = [];
+      // Define a realistic "Snow Season" start and end
+      // We'll use the earlier of Nov 15th OR the first badge-in date
+      const firstBadgeIn = badgeInsRows.length > 0
+        ? new Date(Math.min(...badgeInsRows.map(b => new Date(b.badgeInDate).getTime())))
+        : new Date(new Date(season.startDate).getFullYear(), 10, 15);
+
+      const snowStart = new Date(new Date(season.startDate).getFullYear(), 10, 1); // Start Nov 1
+      if (firstBadgeIn < snowStart) snowStart.setTime(firstBadgeIn.getTime());
+
+      const { average: snowEnd } = estimateSeasonEndDates(new Date());
+      const totalDays = Math.max(1, Math.ceil((snowEnd.getTime() - snowStart.getTime()) / (1000 * 60 * 60 * 24)));
+
+      const countsByDate = badgeInsRows.reduce((acc, b) => {
+        const date = typeof b.badgeInDate === 'string' ? b.badgeInDate : b.badgeInDate.toISOString().split('T')[0];
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      let runningTotal = 0;
+      const combined = [];
+
       for (let i = 0; i <= totalDays; i++) {
-        const current = new Date(start);
-        current.setDate(start.getDate() + i);
+        const current = new Date(snowStart);
+        current.setDate(snowStart.getDate() + i);
         const dateStr = current.toISOString().split('T')[0];
-        targetPace.push({
+
+        runningTotal += (countsByDate[dateStr] || 0);
+
+        const isPastOrToday = dateStr <= todayStr;
+
+        combined.push({
           date: dateStr,
-          target: Number(((goal / totalDays) * i).toFixed(2))
+          target: Number(((goal / totalDays) * i).toFixed(2)),
+          count: isPastOrToday ? runningTotal : undefined,
         });
       }
 
       return {
-        actual: actualPace,
-        target: targetPace,
+        combined,
         goal
       };
     }),

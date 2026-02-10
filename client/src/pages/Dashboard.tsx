@@ -317,7 +317,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="h-[350px] w-100%">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={paceData?.target}>
+                <AreaChart data={paceData?.combined}>
                   <defs>
                     <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
@@ -331,7 +331,7 @@ export default function Dashboard() {
                     tickFormatter={(val) => parseLocalDate(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     minTickGap={30}
                   />
-                  <YAxis stroke="var(--muted-foreground)" domain={[0, 'dataMax + 10']} />
+                  <YAxis stroke="var(--muted-foreground)" domain={[0, 'auto']} />
                   <Tooltip
                     contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px' }}
                     labelFormatter={(val) => parseLocalDate(val).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -345,16 +345,17 @@ export default function Dashboard() {
                     fill="none"
                     name="Target Pace"
                     strokeWidth={1}
+                    connectNulls
                   />
                   <Area
                     type="monotone"
-                    data={paceData?.actual}
                     dataKey="count"
                     stroke="var(--accent)"
                     strokeWidth={3}
                     fillOpacity={1}
                     fill="url(#colorActual)"
                     name="Total Days"
+                    connectNulls
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -366,7 +367,7 @@ export default function Dashboard() {
               </div>
               <div className="flex flex-col items-center p-3 rounded-md bg-muted/5 border border-border">
                 <span className="text-xs text-muted-foreground uppercase tracking-widest">Required Avg</span>
-                <span className="text-xl font-bold">{(seasonStats.season.goal / 120 * 7).toFixed(1)} / week</span>
+                <span className="text-xl font-bold">{(seasonStats.stats as any).neededVisitRatePerWeek.toFixed(1)} / week</span>
               </div>
             </div>
           </CardContent>
