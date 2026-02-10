@@ -319,13 +319,12 @@ export const badgeRouter = router({
       const goal = (season as any).goal || 50;
 
       // Define a realistic "Snow Season" start and end
-      // We'll use the earlier of Nov 15th OR the first badge-in date
+      // Use the actual first badge-in date if available, otherwise default to likely season start (Nov 15)
       const firstBadgeIn = badgeInsRows.length > 0
         ? new Date(Math.min(...badgeInsRows.map(b => new Date(b.badgeInDate).getTime())))
         : new Date(new Date(season.startDate).getFullYear(), 10, 15);
 
-      const snowStart = new Date(new Date(season.startDate).getFullYear(), 10, 1); // Start Nov 1
-      if (firstBadgeIn < snowStart) snowStart.setTime(firstBadgeIn.getTime());
+      const snowStart = new Date(firstBadgeIn);
 
       const { average: fallbackEnd } = estimateSeasonEndDates(new Date());
       const snowEnd = (season as any).actualEndDate ? new Date((season as any).actualEndDate)
