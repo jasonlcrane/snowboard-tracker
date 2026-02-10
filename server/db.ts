@@ -136,7 +136,6 @@ export async function addBadgeIn(data: InsertBadgeIn) {
   });
 }
 
-// Season queries
 export async function getActiveSeason() {
   const db = await getDb();
   if (!db) {
@@ -145,13 +144,40 @@ export async function getActiveSeason() {
         id: 1,
         name: "2025/2026 Season",
         startDate: "2025-11-15",
-        status: "active" as const
+        status: "active" as const,
+        goal: 50
       };
     }
     return null;
   }
-  const result = await db.select().from(seasons).where(eq(seasons.status, "active")).limit(1);
-  return result[0] || null;
+
+  try {
+    const result = await db.select().from(seasons).where(eq(seasons.status, "active")).limit(1);
+    if (result[0]) return result[0];
+
+    // Fallback: Try to find/create a season for today if no "active" one is found
+    console.log("[Database] No active season found, auto-detecting for today...");
+    const today = new Date();
+    const { name } = getSeasonInfoForDate(today);
+
+    const existingByName = await db.select().from(seasons).where(eq(seasons.name, name)).limit(1);
+    if (existingByName[0]) {
+      // If it exists but wasn't 'active', mark it active
+      await db.update(seasons).set({ status: 'active' }).where(eq(seasons.id, existingByName[0].id));
+      return { ...existingByName[0], status: 'active' as const };
+    }
+
+    // Still nothing? Create it.
+    console.log(`[Database] Creating missing season: ${name}`);
+    const seasonId = await getOrCreateSeasonForDate(today);
+    const newSeason = await db.select().from(seasons).where(eq(seasons.id, seasonId)).limit(1);
+    return newSeason[0] || null;
+  } catch (error) {
+    console.error("[Database] Error in getActiveSeason:", error);
+    // If it's a schema issue (missing goal column), this might fail.
+    // In dev, we can fallback to mock, but in prod we might need to be careful.
+    return null;
+  }
 }
 
 export async function createSeason(data: InsertSeason) {
