@@ -73,6 +73,17 @@ export default function Admin() {
     }
   };
 
+  const syncWeatherMutation = trpc.admin.syncWeather.useMutation();
+
+  const handleTriggerWeatherSync = async () => {
+    try {
+      const result = await syncWeatherMutation.mutateAsync();
+      toast.success(result.message);
+    } catch (error) {
+      toast.error('Failed to sync weather data');
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -187,22 +198,42 @@ export default function Admin() {
       {/* Data Download Control */}
       <Card>
         <CardHeader>
-          <CardTitle>Hyland Data Sync</CardTitle>
-          <CardDescription>Manual sync of your Hyland badge-in history</CardDescription>
+          <CardTitle>Data Sync Controls</CardTitle>
+          <CardDescription>Manual sync of your Hyland badge-in history and weather data</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={handleTriggerScrape} disabled={triggerScrapeMutation.isPending}>
-            {triggerScrapeMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-              'Sync Hyland Data'
-            )}
-          </Button>
+          <div className="flex flex-wrap gap-4">
+            <Button onClick={handleTriggerScrape} disabled={triggerScrapeMutation.isPending}>
+              {triggerScrapeMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Syncing Hyland...
+                </>
+              ) : (
+                'Sync Hyland Data'
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleTriggerWeatherSync}
+              disabled={syncWeatherMutation.isPending}
+            >
+              {syncWeatherMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Syncing Weather...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Sync Weather Data
+                </>
+              )}
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground mt-3">
-            Hyland data automatically syncs daily on app load. Use this to manually refresh if needed.
+            Hyland and weather data automatically sync daily on app load. Use these to manually refresh if needed.
           </p>
         </CardContent>
       </Card>

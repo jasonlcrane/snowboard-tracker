@@ -77,7 +77,7 @@ export default function HistoryPage() {
                                                 <span className={entry.isManual ? "text-accent font-medium" : "text-foreground"}>
                                                     {entry.isManual ? (entry.passType || 'Non-Hyland') : 'Hyland Hills'}
                                                 </span>
-                                                {entry.isManual && entry.notes && (
+                                                {!!entry.isManual && entry.notes && (
                                                     <span className="text-[10px] text-muted-foreground italic ml-1">
                                                         ({entry.notes})
                                                     </span>

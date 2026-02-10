@@ -3,6 +3,7 @@ import { protectedProcedure, router } from '../_core/trpc';
 import { getAdminCredentials, saveAdminCredentials, getScrapingLogs, addScrapingLog, updateAdminCredentialScrapeTime } from '../db';
 import { encryptData } from '../utils';
 import { scrapeThreeRiversParks } from '../scrapers/threeRiversParksScraper';
+import { syncWeatherForSeason } from '../services/weather';
 
 export const adminRouter = router({
   getCredentials: protectedProcedure.query(async ({ ctx }) => {
@@ -98,6 +99,8 @@ export const adminRouter = router({
     if (result.success) {
       // Update last scraped time
       await updateAdminCredentialScrapeTime(credentials.id, new Date());
+      // Also sync weather data
+      await syncWeatherForSeason();
     } else {
       throw new Error(result.errorMessage || 'Scrape failed');
     }
@@ -107,6 +110,22 @@ export const adminRouter = router({
       message: `Found ${result.badgeInsFound} entries, added ${result.badgeInsAdded} new entries`,
       badgeInsFound: result.badgeInsFound,
       badgeInsAdded: result.badgeInsAdded,
+    };
+  }),
+
+  syncWeather: protectedProcedure.mutation(async ({ ctx }) => {
+    if (ctx.user?.role !== 'admin') {
+      throw new Error('Unauthorized');
+    }
+
+    const { success, count, error } = await syncWeatherForSeason();
+    if (!success) {
+      throw new Error(error || 'Weather sync failed');
+    }
+
+    return {
+      success: true,
+      message: `Successfully synced ${count} days of weather data`,
     };
   }),
 
@@ -147,6 +166,8 @@ export const adminRouter = router({
 
     if (result.success) {
       await updateAdminCredentialScrapeTime(credentials.id, new Date());
+      // Sync weather data after successful auto-sync
+      await syncWeatherForSeason();
       return {
         status: 'triggered',
         badgeInsAdded: result.badgeInsAdded,
