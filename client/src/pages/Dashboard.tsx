@@ -73,6 +73,13 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [utils]);
 
+  useEffect(() => {
+    if (seasonStats?.season.goal) {
+      setGoalValue(seasonStats.season.goal.toString());
+    }
+  }, [seasonStats?.season.goal]);
+
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -141,12 +148,6 @@ export default function Dashboard() {
       toast.error('Failed to update goal');
     }
   };
-
-  useEffect(() => {
-    if (seasonStats?.season.goal) {
-      setGoalValue(seasonStats.season.goal.toString());
-    }
-  }, [seasonStats?.season.goal]);
 
   return (
     <div className="space-y-6 p-6">
