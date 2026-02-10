@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Target, Trophy, Edit2, Trash2 } from 'lucide-react';
+import { Target, Trophy, Edit2, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
@@ -216,43 +216,6 @@ export default function Dashboard() {
                 <TrendingUp className="w-4 h-4" />
                 {seasonStats.projections.custom ? 'Your Prediction' : 'Projected Hill Days'}
               </span>
-              <div className="flex gap-1">
-                {seasonStats.projections.custom && (
-                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-destructive" onClick={handleDeleteCustomProjection}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                )}
-                <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{seasonStats.projections.custom ? 'Edit Your Prediction' : 'Add Custom Prediction'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4 space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="estEnd">Target Closing Date</Label>
-                        <Input
-                          id="estEnd"
-                          type="date"
-                          value={estEndValue}
-                          onChange={(e) => setEstEndValue(e.target.value)}
-                        />
-                        <p className="text-[10px] text-muted-foreground">Pick a date to see if you can hit your goal by then!</p>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
-                      <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
-                        Save Date
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -335,7 +298,7 @@ export default function Dashboard() {
           <CardDescription>Based on current visit rate and historical weather patterns</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className={`grid grid-cols-1 gap-4 ${seasonStats.projections.custom ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-card border border-border transition-all hover:border-orange-500/50 hover:bg-orange-500/5 group">
               <h3 className="font-bold text-xs mb-2 text-muted-foreground uppercase tracking-widest group-hover:text-orange-500 transition-colors">Conservative</h3>
               <p className="text-3xl font-black mb-2">{seasonStats.projections.conservative}</p>
@@ -357,19 +320,90 @@ export default function Dashboard() {
                 Closing: {parseLocalDate(seasonStats.dates.optimistic).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
-            {seasonStats.projections.custom && (
-              <div className="p-4 rounded-xl bg-accent/10 border border-accent/50 shadow-lg shadow-accent/10 transition-all hover:bg-accent/20 group">
-                <div className="flex items-center justify-between mb-2">
+            {seasonStats.projections.custom ? (
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/50 shadow-lg shadow-accent/10 transition-all hover:bg-accent/20 group relative overflow-hidden">
+                <div className="flex items-center justify-between mb-2 z-10 relative">
                   <h3 className="font-bold text-xs text-accent uppercase tracking-widest">Your Prediction</h3>
-                  <Button variant="ghost" size="icon" className="h-4 w-4 text-accent/50 hover:text-destructive" onClick={handleDeleteCustomProjection}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-4 w-4 text-accent/50 hover:text-accent">
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit Your Prediction</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="estEnd">Target Closing Date</Label>
+                            <Input
+                              id="estEnd"
+                              type="date"
+                              value={estEndValue}
+                              onChange={(e) => setEstEndValue(e.target.value)}
+                            />
+                            <p className="text-[10px] text-muted-foreground">Pick a date to see if you can hit your goal by then!</p>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
+                          <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
+                            Save Date
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <Button variant="ghost" size="icon" className="h-4 w-4 text-accent/50 hover:text-destructive" onClick={handleDeleteCustomProjection}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-3xl font-black mb-2 text-accent">{seasonStats.projections.custom}</p>
-                <p className="text-[11px] text-accent/70 font-medium">
+                <p className="text-3xl font-black mb-2 text-accent z-10 relative">{seasonStats.projections.custom}</p>
+                <p className="text-[11px] text-accent/70 font-medium z-10 relative">
                   Closing: {parseLocalDate(seasonStats.season.estimatedEndDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </p>
+                {/* Background decoration */}
+                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-accent/10 rounded-full blur-2xl z-0" />
               </div>
+            ) : (
+              <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
+                <DialogTrigger asChild>
+                  <div className="p-4 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-accent/5 hover:border-accent/50 transition-all group h-full">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                      <Plus className="w-5 h-5 text-muted-foreground group-hover:text-white" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="font-bold text-xs text-muted-foreground uppercase tracking-widest group-hover:text-accent">Add Your Own</h3>
+                      <p className="text-[10px] text-muted-foreground mt-1">Set a custom end date</p>
+                    </div>
+                  </div>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Custom Prediction</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="estEnd">Target Closing Date</Label>
+                      <Input
+                        id="estEnd"
+                        type="date"
+                        value={estEndValue}
+                        onChange={(e) => setEstEndValue(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Pick a date to see if you can hit your goal by then!</p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
+                      Save Date
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </CardContent>
