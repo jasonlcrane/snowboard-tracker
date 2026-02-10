@@ -21,6 +21,8 @@ export default function Dashboard() {
   const { selectedSeasonId } = useSeason();
 
   const [goalValue, setGoalValue] = useState<string>('50');
+  const [estEndValue, setEstEndValue] = useState<string>('');
+  const [actEndValue, setActEndValue] = useState<string>('');
   const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
 
   const { data: seasonStats, isLoading: statsLoading, refetch: refetchStats } = trpc.badge.getSeasonStats.useQuery({ seasonId: selectedSeasonId });
@@ -28,7 +30,7 @@ export default function Dashboard() {
   const { data: weeklyData, isLoading: weeklyLoading } = trpc.badge.getWeeklyBreakdown.useQuery({ seasonId: selectedSeasonId });
   const { data: dailyData, isLoading: dailyLoading } = trpc.badge.getDailyBreakdown.useQuery({ seasonId: selectedSeasonId });
 
-  const updateGoalMutation = trpc.badge.updateSeasonGoal.useMutation();
+  const updateSeasonMutation = trpc.badge.updateSeasonSettings.useMutation();
 
   const { data: manualEntries } = trpc.manual.getManualEntries.useQuery();
   const { data: tempAnalysis } = trpc.weather.getTemperatureAnalysis.useQuery();
@@ -74,10 +76,12 @@ export default function Dashboard() {
   }, [utils]);
 
   useEffect(() => {
-    if (seasonStats?.season.goal) {
-      setGoalValue(seasonStats.season.goal.toString());
+    if (seasonStats?.season) {
+      setGoalValue(seasonStats.season.goal?.toString() || '50');
+      setEstEndValue(seasonStats.season.estimatedEndDate || '');
+      setActEndValue(seasonStats.season.actualEndDate || '');
     }
-  }, [seasonStats?.season.goal]);
+  }, [seasonStats?.season]);
 
 
   if (isLoading) {
@@ -133,19 +137,21 @@ export default function Dashboard() {
 
   const dailyChartData = fillAllDays();
 
-  const handleUpdateGoal = async () => {
+  const handleUpdateSettings = async () => {
     if (!seasonStats?.season.id) return;
     try {
-      await updateGoalMutation.mutateAsync({
+      await updateSeasonMutation.mutateAsync({
         seasonId: seasonStats.season.id,
-        goal: parseInt(goalValue)
+        goal: parseInt(goalValue),
+        estimatedEndDate: estEndValue,
+        actualEndDate: actEndValue
       });
-      toast.success('Season goal updated!');
+      toast.success('Season settings updated!');
       setIsGoalDialogOpen(false);
       refetchStats();
       refetchPace();
     } catch (error) {
-      toast.error('Failed to update goal');
+      toast.error('Failed to update settings');
     }
   };
 
@@ -221,7 +227,7 @@ export default function Dashboard() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Set Season Goal</DialogTitle>
+                    <DialogTitle>Season Settings</DialogTitle>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div className="space-y-2">
@@ -234,11 +240,31 @@ export default function Dashboard() {
                         placeholder="e.g. 50"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="estEnd">Estimated End Date</Label>
+                      <Input
+                        id="estEnd"
+                        type="date"
+                        value={estEndValue}
+                        onChange={(e) => setEstEndValue(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Used for progress charting if season is active.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="actEnd">Actual End Date</Label>
+                      <Input
+                        id="actEnd"
+                        type="date"
+                        value={actEndValue}
+                        onChange={(e) => setActEndValue(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Locks the season once finished.</p>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsGoalDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleUpdateGoal} disabled={updateGoalMutation.isPending}>
-                      Save Goal
+                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
+                      Save Settings
                     </Button>
                   </DialogFooter>
                 </DialogContent>

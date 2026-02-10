@@ -85,6 +85,8 @@ export const badgeRouter = router({
           startDate: season.startDate,
           status: season.status,
           goal: (season as any).goal || 50,
+          estimatedEndDate: (season as any).estimatedEndDate,
+          actualEndDate: (season as any).actualEndDate,
         },
         stats: {
           totalBadgeIns: badgeInsRows.length,
@@ -233,8 +235,13 @@ export const badgeRouter = router({
       return badgeInsWithWeather;
     }),
 
-  updateSeasonGoal: protectedProcedure
-    .input(z.object({ seasonId: z.number(), goal: z.number() }))
+  updateSeasonSettings: protectedProcedure
+    .input(z.object({
+      seasonId: z.number(),
+      goal: z.number().optional(),
+      estimatedEndDate: z.string().optional(),
+      actualEndDate: z.string().optional()
+    }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) {
@@ -243,7 +250,13 @@ export const badgeRouter = router({
         }
         throw new Error("Database not available");
       }
-      await db.update(seasons).set({ goal: input.goal }).where(eq(seasons.id, input.seasonId));
+
+      const updateData: any = {};
+      if (input.goal !== undefined) updateData.goal = input.goal;
+      if (input.estimatedEndDate !== undefined) updateData.estimatedEndDate = input.estimatedEndDate === "" ? null : input.estimatedEndDate;
+      if (input.actualEndDate !== undefined) updateData.actualEndDate = input.actualEndDate === "" ? null : input.actualEndDate;
+
+      await db.update(seasons).set(updateData).where(eq(seasons.id, input.seasonId));
       return { success: true };
     }),
 
