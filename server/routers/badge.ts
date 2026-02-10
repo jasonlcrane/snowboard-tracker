@@ -335,6 +335,77 @@ export const badgeRouter = router({
       };
     }),
 
+  getTimeOfDayAnalysis: publicProcedure
+    .input(z.object({ seasonId: z.number().optional() }).optional())
+    .query(async ({ input }) => {
+      let seasonId = input?.seasonId;
+      const db = await getDb();
+
+      if (!seasonId) {
+        const season = await getActiveSeason();
+        if (!season) {
+          if (process.env.NODE_ENV === 'development') {
+            return [
+              { period: 'Morning', count: 12, fill: 'var(--chart-1)' },
+              { period: 'Mid-Day', count: 18, fill: 'var(--chart-2)' },
+              { period: 'Evening', count: 25, fill: 'var(--chart-3)' },
+              { period: 'Night', count: 7, fill: 'var(--chart-4)' },
+            ];
+          }
+          return [];
+        }
+        seasonId = season.id;
+      }
+
+      const badgeInsRows = await getBadgeInsBySeason(seasonId);
+
+      if (badgeInsRows.length === 0 && process.env.NODE_ENV === 'development' && !(await getDb())) {
+        return [
+          { period: 'Morning', count: 12, fill: 'var(--chart-1)' },
+          { period: 'Mid-Day', count: 18, fill: 'var(--chart-2)' },
+          { period: 'Evening', count: 25, fill: 'var(--chart-3)' },
+          { period: 'Night', count: 7, fill: 'var(--chart-4)' },
+        ];
+      }
+
+      const counts = {
+        'Morning': 0, // 6 AM - 11 AM
+        'Mid-Day': 0, // 11 AM - 3 PM
+        'Evening': 0, // 3 PM - 7 PM
+        'Night': 0,   // 7 PM - 12 AM
+      };
+
+      badgeInsRows.forEach(b => {
+        if (!b.badgeInTime) return;
+
+        // Simple AM/PM parser
+        let hour = 0;
+        const timeMatch = b.badgeInTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (timeMatch) {
+          hour = parseInt(timeMatch[1]);
+          const ampm = timeMatch[3].toUpperCase();
+          if (ampm === 'PM' && hour !== 12) hour += 12;
+          if (ampm === 'AM' && hour === 12) hour = 0;
+        } else {
+          // Try 24 hour format if match fails
+          const hourMatch = b.badgeInTime.match(/^(\d{2})/);
+          if (hourMatch) hour = parseInt(hourMatch[1]);
+        }
+
+        if (hour >= 6 && hour < 11) counts['Morning']++;
+        else if (hour >= 11 && hour < 15) counts['Mid-Day']++;
+        else if (hour >= 15 && hour < 19) counts['Evening']++;
+        else counts['Night']++;
+      });
+
+      return [
+        { period: 'Morning', count: counts['Morning'], fill: 'var(--chart-1)', range: '6am - 11am' },
+        { period: 'Mid-Day', count: counts['Mid-Day'], fill: 'var(--chart-2)', range: '11am - 3pm' },
+        { period: 'Evening', count: counts['Evening'], fill: 'var(--chart-3)', range: '3pm - 7pm' },
+        { period: 'Night', count: counts['Night'], fill: 'var(--chart-4)', range: '7pm - 12am' },
+      ];
+    }),
+
   getProjectionHistory: publicProcedure.query(async () => {
     const season = await getActiveSeason();
     if (!season) return [];

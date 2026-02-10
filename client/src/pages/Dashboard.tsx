@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 import { Loader2, TrendingUp, Calendar, Zap } from 'lucide-react';
 import { ManualEntryDialog } from '@/components/ManualEntryDialog';
 import { ForecastWidget } from '@/components/ForecastWidget';
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const { data: paceData, isLoading: paceLoading, refetch: refetchPace } = trpc.badge.getCumulativePace.useQuery({ seasonId: selectedSeasonId });
   const { data: weeklyData, isLoading: weeklyLoading } = trpc.badge.getWeeklyBreakdown.useQuery({ seasonId: selectedSeasonId });
   const { data: dailyData, isLoading: dailyLoading } = trpc.badge.getDailyBreakdown.useQuery({ seasonId: selectedSeasonId });
+  const { data: timeData, isLoading: timeLoading } = trpc.badge.getTimeOfDayAnalysis.useQuery({ seasonId: selectedSeasonId });
 
   const updateGoalMutation = trpc.badge.updateSeasonGoal.useMutation();
 
@@ -37,7 +38,7 @@ export default function Dashboard() {
   const [showGlimmer, setShowGlimmer] = useState(false);
   const [lastBadgeCount, setLastBadgeCount] = useState<number | null>(null);
 
-  const isLoading = statsLoading || weeklyLoading || dailyLoading || paceLoading;
+  const isLoading = statsLoading || weeklyLoading || dailyLoading || paceLoading || timeLoading;
 
   // Trigger glimmer when total badge-ins change
   useEffect(() => {
@@ -428,6 +429,45 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Time of Day Analysis */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Session Arrival Times</CardTitle>
+            <CardDescription>When you typically start your hill day</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <div className="h-[300px] w-full mt-[-20px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadialBarChart
+                  innerRadius="30%"
+                  outerRadius="90%"
+                  data={timeData}
+                  startAngle={180}
+                  endAngle={-180}
+                >
+                  <RadialBar
+                    background
+                    dataKey="count"
+                    cornerRadius={10}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                    formatter={(value: any, name: any, props: any) => [value, props.payload.range]}
+                  />
+                  <Legend
+                    iconSize={10}
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="right"
+                    wrapperStyle={{ fontSize: '10px' }}
+                  />
+                </RadialBarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-widest">Clockwise: Morning → Night</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Activity Frequency by Day of Week */}
