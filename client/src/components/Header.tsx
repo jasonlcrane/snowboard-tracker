@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
-import { LogOut, Settings, LayoutDashboard, History, Plus } from "lucide-react";
+import { LogOut, Settings, LayoutDashboard, History, Plus, ShieldCheck } from "lucide-react";
 import { ManualEntryDialog } from "./ManualEntryDialog";
 
 export function Header() {
@@ -52,6 +52,18 @@ export function Header() {
                             </Button>
                         </Link>
 
+                        <Link href="/settings">
+                            <Button
+                                variant={location === "/settings" ? "secondary" : "ghost"}
+                                size="sm"
+                                className="gap-2 px-2 md:px-3"
+                                title="Settings"
+                            >
+                                <Settings className="w-4 h-4" />
+                                <span className="hidden md:inline">Settings</span>
+                            </Button>
+                        </Link>
+
                         {user?.role === 'admin' && (
                             <Link href="/admin">
                                 <Button
@@ -60,7 +72,7 @@ export function Header() {
                                     className="gap-2 px-2 md:px-3"
                                     title="Admin Panel"
                                 >
-                                    <Settings className="w-4 h-4" />
+                                    <ShieldCheck className="w-4 h-4" />
                                     <span className="hidden md:inline">Admin</span>
                                 </Button>
                             </Link>

@@ -9,29 +9,18 @@ import { WeatherAlerts } from '@/components/WeatherAlerts';
 import { Link } from 'wouter';
 import { SeasonSwitcher } from '@/components/SeasonSwitcher';
 import { useSeason } from '@/contexts/SeasonContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Edit2, Target, Trophy, AlertTriangle } from 'lucide-react';
+import { Target, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
   const utils = trpc.useUtils();
   const { selectedSeasonId } = useSeason();
 
-  const [goalValue, setGoalValue] = useState<string>('50');
-  const [estEndValue, setEstEndValue] = useState<string>('');
-  const [actEndValue, setActEndValue] = useState<string>('');
-  const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
-  const [isTimingDialogOpen, setIsTimingDialogOpen] = useState(false);
-
   const { data: seasonStats, isLoading: statsLoading, refetch: refetchStats } = trpc.badge.getSeasonStats.useQuery({ seasonId: selectedSeasonId });
-  const { data: paceData, isLoading: paceLoading, refetch: refetchPace } = trpc.badge.getCumulativePace.useQuery({ seasonId: selectedSeasonId });
   const { data: weeklyData, isLoading: weeklyLoading } = trpc.badge.getWeeklyBreakdown.useQuery({ seasonId: selectedSeasonId });
   const { data: dailyData, isLoading: dailyLoading } = trpc.badge.getDailyBreakdown.useQuery({ seasonId: selectedSeasonId });
-
-  const updateSeasonMutation = trpc.badge.updateSeasonSettings.useMutation();
+  const { data: paceData, isLoading: paceLoading } = trpc.badge.getCumulativePace.useQuery({ seasonId: selectedSeasonId });
 
   const { data: manualEntries } = trpc.manual.getManualEntries.useQuery();
   const { data: tempAnalysis } = trpc.weather.getTemperatureAnalysis.useQuery();
@@ -75,21 +64,6 @@ export default function Dashboard() {
     }, 30000);
     return () => clearInterval(interval);
   }, [utils]);
-
-  useEffect(() => {
-    if (seasonStats?.season) {
-      setGoalValue(seasonStats.season.goal?.toString() || '50');
-
-      const today = new Date().toISOString().split('T')[0];
-      const avgDate = seasonStats.dates?.average
-        ? new Date(seasonStats.dates.average).toISOString().split('T')[0]
-        : today;
-
-      setEstEndValue(seasonStats.season.estimatedEndDate || avgDate);
-      // We pre-fill actual end date with today to provide the correct year context
-      setActEndValue(seasonStats.season.actualEndDate || today);
-    }
-  }, [seasonStats?.season, seasonStats?.dates]);
 
 
   if (isLoading) {
@@ -145,25 +119,6 @@ export default function Dashboard() {
 
   const dailyChartData = fillAllDays();
 
-  const handleUpdateSettings = async () => {
-    if (!seasonStats?.season.id) return;
-    try {
-      await updateSeasonMutation.mutateAsync({
-        seasonId: seasonStats.season.id,
-        goal: parseInt(goalValue),
-        estimatedEndDate: estEndValue,
-        actualEndDate: actEndValue
-      });
-      toast.success('Season settings updated!');
-      setIsGoalDialogOpen(false);
-      setIsTimingDialogOpen(false);
-      refetchStats();
-      refetchPace();
-    } catch (error) {
-      toast.error('Failed to update settings');
-    }
-  };
-
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -202,58 +157,6 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
               <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Projected Hill Days</span>
-              <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Season Timing</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="estEnd">Estimated End Date</Label>
-                      <Input
-                        id="estEnd"
-                        type="date"
-                        value={estEndValue}
-                        onChange={(e) => setEstEndValue(e.target.value)}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Used for progress charting and projections.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="actEnd">Actual End Date</Label>
-                      <Input
-                        id="actEnd"
-                        type="date"
-                        value={actEndValue}
-                        onChange={(e) => setActEndValue(e.target.value)}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Locks the season once finished.</p>
-                    </div>
-
-                    {actEndValue && !seasonStats.season.actualEndDate && (
-                      <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-md flex items-start gap-3">
-                        <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
-                        <div className="space-y-1">
-                          <p className="text-xs text-yellow-600 font-bold uppercase tracking-tight">Potentially Destructive Action</p>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            Setting an <strong>Actual End Date</strong> will mark this season as <strong>completed</strong> and lock all future projections. This is usually done once the resorts have closed.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
-                      Save Timing
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -282,36 +185,6 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
               <span className="flex items-center gap-2"><Trophy className="w-4 h-4" /> Season Goal</span>
-              <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Season Goal</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="goal">Target Hill Days</Label>
-                      <Input
-                        id="goal"
-                        type="number"
-                        value={goalValue}
-                        onChange={(e) => setGoalValue(e.target.value)}
-                        placeholder="e.g. 50"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsGoalDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
-                      Save Goal
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </CardTitle>
           </CardHeader>
           <CardContent>
