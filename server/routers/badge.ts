@@ -80,13 +80,16 @@ export const badgeRouter = router({
 
       const { conservative, average, optimistic } = estimateSeasonEndDates(season.status === 'active' ? today : new Date(season.startDate));
 
+      const customEndDate = (season as any).estimatedEndDate ? new Date((season as any).estimatedEndDate) : null;
+
       const projections = calculateProjections(
         badgeInsRows.length,
         daysElapsed,
         conservative,
         average,
         optimistic,
-        season.status === 'active' ? today : new Date((season as any).actualEndDate || (season as any).estimatedEndDate || today)
+        season.status === 'active' ? today : new Date((season as any).actualEndDate || (season as any).estimatedEndDate || today),
+        customEndDate
       );
 
       const remainingGoal = Math.max(0, ((season as any).goal || 50) - badgeInsRows.length);
@@ -114,6 +117,7 @@ export const badgeRouter = router({
           conservative: projections.conservativeTotal,
           average: projections.averageTotal,
           optimistic: projections.optimisticTotal,
+          custom: projections.customTotal,
           remainingDays: season.status === 'active' ? projections.remainingDays : 0,
         },
         dates: {

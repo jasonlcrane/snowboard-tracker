@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Target, Trophy, Edit2 } from 'lucide-react';
+import { Target, Trophy, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
@@ -106,6 +106,21 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteCustomProjection = async () => {
+    if (!seasonStats?.season.id) return;
+    try {
+      await updateSeasonMutation.mutateAsync({
+        seasonId: seasonStats.season.id,
+        estimatedEndDate: "" // Empty string sets it to null in backend
+      });
+      toast.success('Custom projection removed');
+      utils.badge.getSeasonStats.invalidate();
+      utils.badge.getCumulativePace.invalidate();
+    } catch (error) {
+      toast.error('Failed to remove custom projection');
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -193,48 +208,64 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className={`relative overflow-hidden transition-all duration-500 ${showGlimmer ? 'ring-2 ring-accent/30' : ''}`}>
-          {showGlimmer && <div className="absolute inset-0 pointer-events-none animate-glimmer z-10" />}
+        {/* Projected Hill Days (Dynamic based on Custom or Average) */}
+        <Card className={`relative overflow-hidden transition-all duration-500 ring-1 ${seasonStats.projections.custom ? 'ring-accent/50 bg-accent/5' : 'ring-border'}`}>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Projected Hill Days</span>
-              <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
-                    <Edit2 className="h-3 w-3" />
+              <span className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                {seasonStats.projections.custom ? 'Your Prediction' : 'Projected Hill Days'}
+              </span>
+              <div className="flex gap-1">
+                {seasonStats.projections.custom && (
+                  <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-destructive" onClick={handleDeleteCustomProjection}>
+                    <Trash2 className="h-3 w-3" />
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Estimated Season End</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="estEnd">Estimated End Date</Label>
-                      <Input
-                        id="estEnd"
-                        type="date"
-                        value={estEndValue}
-                        onChange={(e) => setEstEndValue(e.target.value)}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Adjusting this will update your Required Weekly Average.</p>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
-                      Save Date
+                )}
+                <Dialog open={isTimingDialogOpen} onOpenChange={setIsTimingDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-accent">
+                      <Edit2 className="h-3 w-3" />
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{seasonStats.projections.custom ? 'Edit Your Prediction' : 'Add Custom Prediction'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="estEnd">Target Closing Date</Label>
+                        <Input
+                          id="estEnd"
+                          type="date"
+                          value={estEndValue}
+                          onChange={(e) => setEstEndValue(e.target.value)}
+                        />
+                        <p className="text-[10px] text-muted-foreground">Pick a date to see if you can hit your goal by then!</p>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsTimingDialogOpen(false)}>Cancel</Button>
+                      <Button onClick={handleUpdateSettings} disabled={updateSeasonMutation.isPending}>
+                        Save Date
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{seasonStats.projections.average}</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              To {parseLocalDate(seasonStats.season.actualEndDate || seasonStats.season.estimatedEndDate || seasonStats.dates.average).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </p>
+            <div className="text-4xl font-bold">{seasonStats.projections.custom || seasonStats.projections.average}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <p className="text-xs text-muted-foreground italic">
+                {seasonStats.projections.custom ? 'Custom scenario' : 'Average scenario'}
+              </p>
+              <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground">
+                To {parseLocalDate(seasonStats.season.actualEndDate || seasonStats.season.estimatedEndDate || seasonStats.dates.average).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -304,28 +335,42 @@ export default function Dashboard() {
           <CardDescription>Based on current visit rate and historical weather patterns</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-card border border-border">
-              <h3 className="font-semibold text-sm mb-2 text-foreground/90">Conservative</h3>
-              <p className="text-3xl font-bold mb-2">{seasonStats.projections.conservative}</p>
-              <p className="text-xs text-muted-foreground">
-                Close: {seasonStats.dates.conservative.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          <div className={`grid grid-cols-1 gap-4 ${seasonStats.projections.custom ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+            <div className="p-4 rounded-xl bg-card border border-border transition-all hover:border-orange-500/50 hover:bg-orange-500/5 group">
+              <h3 className="font-bold text-xs mb-2 text-muted-foreground uppercase tracking-widest group-hover:text-orange-500 transition-colors">Conservative</h3>
+              <p className="text-3xl font-black mb-2">{seasonStats.projections.conservative}</p>
+              <p className="text-[11px] text-muted-foreground font-medium">
+                Closing: {parseLocalDate(seasonStats.dates.conservative).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-card border border-border border-accent">
-              <h3 className="font-semibold text-sm mb-2 text-foreground/90">Average (Most Likely)</h3>
-              <p className="text-3xl font-bold mb-2">{seasonStats.projections.average}</p>
-              <p className="text-xs text-muted-foreground">
-                Close: {seasonStats.dates.average.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            <div className="p-4 rounded-xl bg-card border border-border border-blue-500/30 bg-blue-500/5 transition-all hover:border-blue-500/50 group">
+              <h3 className="font-bold text-xs mb-2 text-blue-500 uppercase tracking-widest">Average (Historical)</h3>
+              <p className="text-3xl font-black mb-2">{seasonStats.projections.average}</p>
+              <p className="text-[11px] text-muted-foreground font-medium">
+                Closing: {parseLocalDate(seasonStats.dates.average).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-card border border-border">
-              <h3 className="font-semibold text-sm mb-2 text-foreground/90">Optimistic</h3>
-              <p className="text-3xl font-bold mb-2">{seasonStats.projections.optimistic}</p>
-              <p className="text-xs text-muted-foreground">
-                Close: {seasonStats.dates.optimistic.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            <div className="p-4 rounded-xl bg-card border border-border transition-all hover:border-green-500/50 hover:bg-green-500/5 group">
+              <h3 className="font-bold text-xs mb-2 text-muted-foreground uppercase tracking-widest group-hover:text-green-500 transition-colors">Optimistic</h3>
+              <p className="text-3xl font-black mb-2">{seasonStats.projections.optimistic}</p>
+              <p className="text-[11px] text-muted-foreground font-medium">
+                Closing: {parseLocalDate(seasonStats.dates.optimistic).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>
+            {seasonStats.projections.custom && (
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/50 shadow-lg shadow-accent/10 transition-all hover:bg-accent/20 group">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-xs text-accent uppercase tracking-widest">Your Prediction</h3>
+                  <Button variant="ghost" size="icon" className="h-4 w-4 text-accent/50 hover:text-destructive" onClick={handleDeleteCustomProjection}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-3xl font-black mb-2 text-accent">{seasonStats.projections.custom}</p>
+                <p className="text-[11px] text-accent/70 font-medium">
+                  Closing: {parseLocalDate(seasonStats.season.estimatedEndDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

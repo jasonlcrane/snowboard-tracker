@@ -39,6 +39,7 @@ export interface ProjectionScenario {
   conservativeTotal: number;
   averageTotal: number;
   optimisticTotal: number;
+  customTotal?: number;
   remainingDays: number;
   visitRate: number;
 }
@@ -49,7 +50,8 @@ export function calculateProjections(
   conservativeEndDate: Date,
   averageEndDate: Date,
   optimisticEndDate: Date,
-  today: Date = new Date()
+  today: Date = new Date(),
+  customEndDate: Date | null = null
 ): ProjectionScenario {
   const visitRate = currentTotal / daysElapsed;
 
@@ -57,11 +59,16 @@ export function calculateProjections(
   const averageDaysRemaining = Math.max(0, Math.floor((averageEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
   const optimisticDaysRemaining = Math.max(0, Math.floor((optimisticEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
+  const customDaysRemaining = customEndDate
+    ? Math.max(0, Math.floor((customEndDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))
+    : null;
+
   return {
     conservativeTotal: Math.round(currentTotal + (visitRate * conservativeDaysRemaining)),
     averageTotal: Math.round(currentTotal + (visitRate * averageDaysRemaining)),
     optimisticTotal: Math.round(currentTotal + (visitRate * optimisticDaysRemaining)),
-    remainingDays: averageDaysRemaining,
+    customTotal: customDaysRemaining !== null ? Math.round(currentTotal + (visitRate * customDaysRemaining)) : undefined,
+    remainingDays: customDaysRemaining !== null ? customDaysRemaining : averageDaysRemaining,
     visitRate: parseFloat(visitRate.toFixed(2)),
   };
 }
