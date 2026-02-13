@@ -11,6 +11,7 @@ let _db: ReturnType<typeof drizzle> | null = null;
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db) {
+    const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl || dbUrl.includes('placeholder')) {
       if (process.env.NODE_ENV === 'development') {
         console.warn("[Database] No valid DATABASE_URL found. Running in mock mode.");
