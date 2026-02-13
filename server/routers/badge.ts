@@ -250,6 +250,7 @@ export const badgeRouter = router({
         .where(eq(badgeIns.seasonId, seasonId))
         .orderBy(desc(badgeIns.badgeInDate));
 
+      console.log(`[Router] getAllBadgeIns: Found ${badgeInsWithWeather.length} entries for seasonId=${seasonId}`);
       return badgeInsWithWeather;
     }),
 

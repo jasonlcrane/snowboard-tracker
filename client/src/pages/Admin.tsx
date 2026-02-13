@@ -29,6 +29,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       refetchLogs();
+      refetchStats();
       setIsEditingCredentials(false);
     }
   });

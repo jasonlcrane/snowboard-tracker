@@ -11,11 +11,9 @@ let _db: ReturnType<typeof drizzle> | null = null;
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db) {
-    const dbUrl = process.env.DATABASE_URL;
-
-    if (!dbUrl || dbUrl.includes('localhost:3306') || dbUrl.includes('placeholder')) {
+    if (!dbUrl || dbUrl.includes('placeholder')) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn("[Database] No valid DATABASE_URL found or using default. Running in mock mode.");
+        console.warn("[Database] No valid DATABASE_URL found. Running in mock mode.");
         return null;
       }
     }
@@ -184,7 +182,10 @@ export async function getActiveSeason() {
 
   try {
     const result = await db.select().from(seasons).where(eq(seasons.status, "active")).limit(1);
-    if (result[0]) return result[0];
+    if (result[0]) {
+      console.log(`[Database] Found active season: ID=${result[0].id}, Name="${result[0].name}"`);
+      return result[0];
+    }
 
     // Fallback: Try to find/create a season for today if no "active" one is found
     console.log("[Database] No active season found, auto-detecting for today...");
@@ -230,9 +231,10 @@ export async function getOrCreateSeasonForDate(date: string | Date): Promise<num
   const utcDate = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate()));
   const { name, startDate } = getSeasonInfoForDate(utcDate);
 
-  // Check if season exists
-  const existing = await db.select().from(seasons).where(eq(seasons.name, name)).limit(1);
+  // Check if season exists (insensitive match, including completed ones)
+  const existing = await db.select().from(seasons).where(eq(seasons.name, name.trim())).limit(1);
   if (existing[0]) {
+    console.log(`[Database] Found existing season "${name.trim()}" (ID=${existing[0].id}, Status=${existing[0].status})`);
     return existing[0].id;
   }
 
