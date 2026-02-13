@@ -178,6 +178,9 @@ const plugins = [
           type: 'image/png'
         }
       ]
+    },
+    workbox: {
+      navigateFallbackDenylist: [/^\/api/]
     }
   })
 ];
