@@ -107,6 +107,7 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
+      console.log(`[OAuth] Successfully logged in user: ${payload.email}. Redirecting to /`);
       res.redirect("/");
 
     } catch (error) {

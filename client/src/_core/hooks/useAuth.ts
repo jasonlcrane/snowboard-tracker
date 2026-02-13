@@ -67,6 +67,7 @@ export function useAuth(options?: UseAuthOptions) {
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
 
+    console.log(`[useAuth] Redirecting to ${redirectPath} because user is not authenticated. Path: ${window.location.pathname}`);
     window.location.href = redirectPath
   }, [
     redirectOnUnauthenticated,
