@@ -191,7 +191,7 @@ export default function Admin() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {logs?.map(log => (
+            {logs?.map((log: any) => (
               <div key={log.id} className="text-xs p-2 flex justify-between border-b last:border-0 border-border">
                 <span>{new Date(log.createdAt).toLocaleString()}</span>
                 <span className={log.status === 'success' ? 'text-green-500' : 'text-red-500'}>{log.status}</span>
