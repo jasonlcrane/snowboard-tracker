@@ -30,10 +30,10 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
+    // baseURL is logged as empty if not set, which is fine if not using the OAuth server flow
+    if (!ENV.oAuthServerUrl && ENV.isProduction) {
+      console.warn(
+        "[OAuth] OAUTH_SERVER_URL is not configured. This is only required for external API auth, not native Google Auth."
       );
     }
   }

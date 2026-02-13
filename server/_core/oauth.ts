@@ -25,11 +25,14 @@ const client = new OAuth2Client(
 export function registerOAuthRoutes(app: Express) {
   // 1. Redirect to Google
   app.get("/api/auth/google", (req: Request, res: Response) => {
+    console.log(`[OAuth] Hit /api/auth/google from ${req.ip}`);
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      console.error("[OAuth] Missing Google Auth configuration");
       return res.status(500).send("Google Auth not configured on server.");
     }
 
     const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/callback`;
+    console.log(`[OAuth] Redirecting with URI: ${redirectUri}`);
 
     // Create a temporary client just for generating the URL with the correct redirect URI
     // Or we can just use the static generateAuthUrl if we update the redirectUri on the instance
@@ -47,6 +50,7 @@ export function registerOAuthRoutes(app: Express) {
 
   // 2. Google Callback
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+    console.log(`[OAuth] Hit /api/oauth/callback from ${req.ip}`);
     const code = typeof req.query.code === "string" ? req.query.code : undefined;
 
     if (!code) {
