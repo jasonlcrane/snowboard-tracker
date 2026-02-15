@@ -1,6 +1,6 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { addBadgeIn, getActiveSeason, addScrapingLog, updateScrapingLog, getBadgeInsBySeason, getOrCreateSeasonForDate } from '../db';
-import { decryptData } from '../utils';
+import { decryptData, getSeasonInfoForDate } from '../utils';
 import { BadgeIn } from '../../drizzle/schema'; // Assuming type might be needed or just use any if not easily available
 
 interface ScraperResult {
@@ -90,7 +90,15 @@ export async function scrapeThreeRiversParks(
     );
 
     // Extract badge-in data
-    const badgeIns = await extractBadgeIns(page);
+    const rawBadgeIns = await extractBadgeIns(page);
+
+    // Filter to only include entries from the current season (July 1 onwards)
+    const currentSeasonInfo = getSeasonInfoForDate(new Date());
+    const seasonStartDate = currentSeasonInfo.startDate; // e.g. "2025-07-01"
+
+    const badgeIns = rawBadgeIns.filter(b => b.date >= seasonStartDate);
+    console.log(`[Scraper] Filtered ${rawBadgeIns.length} total entries to ${badgeIns.length} entries in current season (>= ${seasonStartDate})`);
+
     result.badgeInsFound = badgeIns.length;
 
     // Fetch existing badge-ins once (we'll filter/add per season in the loop)
@@ -99,27 +107,25 @@ export async function scrapeThreeRiversParks(
 
     // Add badge-ins to database
     let addedCount = 0;
-    let duplicateCount = 0;
 
     for (const badgeIn of badgeIns) {
-      // Resolve season for this specific date
-      const seasonId = await getOrCreateSeasonForDate(badgeIn.date);
-
-      const key = `${badgeIn.date}_${badgeIn.time || ''}_0`; // Scraped entries are always isManual: 0
-
       try {
-        await addBadgeIn({
-          seasonId: seasonId as any,
+        // Resolve the correct season for this badge-in's date
+        const seasonId = await getOrCreateSeasonForDate(badgeIn.date);
+
+        const addResult = await addBadgeIn({
+          seasonId,
           badgeInDate: badgeIn.date as any,
           badgeInTime: badgeIn.time || '',
           passType: badgeIn.passType,
           isManual: 0,
         });
-        addedCount++;
+
+        if (addResult.success && addResult.isNew) {
+          addedCount++;
+        }
       } catch (error) {
-        // onDuplicateKeyUpdate in addBadgeIn handles the "duplicate" case silently
-        // we'll just count it if it was truly new (though addBadgeIn doesn't return that info)
-        // Let's optimize: we'll just say we processed them.
+        console.error(`Error adding badge-in for ${badgeIn.date}:`, error);
       }
     }
 

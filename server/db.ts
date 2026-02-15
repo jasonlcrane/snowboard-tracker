@@ -23,7 +23,7 @@ export async function getDb() {
       const pool = mysql.createPool({
         uri: dbUrl,
         ssl: { rejectUnauthorized: false }, // Critical for Railway/Cloud DBs
-        connectTimeout: 2000,
+        connectTimeout: 20000,
       });
       _db = drizzle(pool);
       console.log("[Database] Connected successfully");
@@ -146,20 +146,35 @@ export async function getBadgeInsBySeason(seasonId: number) {
   return db.select().from(badgeIns).where(eq(badgeIns.seasonId, seasonId));
 }
 
-export async function addBadgeIn(data: InsertBadgeIn) {
+export async function addBadgeIn(data: InsertBadgeIn): Promise<{ success: boolean; isNew: boolean }> {
   const db = await getDb();
   if (!db) {
     if (process.env.NODE_ENV === 'development') {
       console.log("[Database] Mock addBadgeIn:", data);
-      return;
+      return { success: true, isNew: true };
     }
     throw new Error("Database not available");
   }
-  await db.insert(badgeIns).values(data).onDuplicateKeyUpdate({
-    set: {
-      updatedAt: new Date(),
-    },
-  });
+
+  try {
+    // We use raw SQL or a specific drizzle-orm feature to check if a row was actually inserted vs updated
+    // In MySQL, affectedRows is 1 for a new row, 2 for an update.
+    const [result] = await db.insert(badgeIns).values(data).onDuplicateKeyUpdate({
+      set: {
+        updatedAt: new Date(),
+      },
+    }) as any;
+
+    return {
+      success: true,
+      // In mysql2, affectedRows is what we need. 
+      // 1 = inserted, 2 = updated, 0 = no change.
+      isNew: result?.affectedRows === 1
+    };
+  } catch (error) {
+    console.error("[Database] Failed to add badge-in:", error);
+    return { success: false, isNew: false };
+  }
 }
 
 export async function getActiveSeason() {
@@ -169,7 +184,7 @@ export async function getActiveSeason() {
       return {
         id: 1,
         name: "2025/2026 Season",
-        startDate: "2025-11-15",
+        startDate: "2025-07-01",
         status: "active" as const,
         goal: 50,
         estimatedEndDate: null,
@@ -182,33 +197,28 @@ export async function getActiveSeason() {
   }
 
   try {
-    const result = await db.select().from(seasons).where(eq(seasons.status, "active")).limit(1);
-    if (result[0]) {
-      console.log(`[Database] Found active season: ID=${result[0].id}, Name="${result[0].name}"`);
-      return result[0];
-    }
-
-    // Fallback: Try to find/create a season for today if no "active" one is found
-    console.log("[Database] No active season found, auto-detecting for today...");
+    // Compute the correct season for today's date
     const today = new Date();
-    const { name } = getSeasonInfoForDate(today);
+    const seasonInfo = getSeasonInfoForDate(today);
 
-    const existingByName = await db.select().from(seasons).where(eq(seasons.name, name)).limit(1);
-    if (existingByName[0]) {
-      // If it exists but wasn't 'active', mark it active
-      await db.update(seasons).set({ status: 'active' }).where(eq(seasons.id, existingByName[0].id));
-      return { ...existingByName[0], status: 'active' as const };
+    // Look up by name — this is the single source of truth
+    const result = await db.select().from(seasons)
+      .where(eq(seasons.name, seasonInfo.name))
+      .limit(1);
+
+    if (result[0]) {
+      if (result[0].status !== 'active') {
+        await db.update(seasons).set({ status: 'active' }).where(eq(seasons.id, result[0].id));
+      }
+      return { ...result[0], status: 'active' as const };
     }
 
-    // Still nothing? Create it.
-    console.log(`[Database] Creating missing season: ${name}`);
+    // If no season exists for the current date range, create one
     const seasonId = await getOrCreateSeasonForDate(today);
     const newSeason = await db.select().from(seasons).where(eq(seasons.id, seasonId)).limit(1);
     return newSeason[0] || null;
   } catch (error) {
     console.error("[Database] Error in getActiveSeason:", error);
-    // If it's a schema issue (missing goal column), this might fail.
-    // In dev, we can fallback to mock, but in prod we might need to be careful.
     return null;
   }
 }
@@ -228,25 +238,32 @@ export async function getOrCreateSeasonForDate(date: string | Date): Promise<num
   }
 
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  // Use UTC dates for season calculation to avoid timezone shifts
-  const utcDate = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate()));
-  const { name, startDate } = getSeasonInfoForDate(utcDate);
+  const seasonInfo = getSeasonInfoForDate(dateObj);
 
-  // Check if season exists (insensitive match, including completed ones)
-  const existing = await db.select().from(seasons).where(eq(seasons.name, name.trim())).limit(1);
+  // Look up existing season by computed name
+  const existing = await db.select().from(seasons)
+    .where(eq(seasons.name, seasonInfo.name))
+    .limit(1);
+
   if (existing[0]) {
-    console.log(`[Database] Found existing season "${name.trim()}" (ID=${existing[0].id}, Status=${existing[0].status})`);
+    // Ensure it's active
+    if (existing[0].status !== 'active') {
+      await db.update(seasons).set({ status: 'active' }).where(eq(seasons.id, existing[0].id));
+    }
     return existing[0].id;
   }
 
-  // Create new season
+  // Season doesn't exist — create it with the triggering date as start
+  // (so "days elapsed" counts from the first actual visit, not July 1)
+  console.log(`[Database] Creating new season: ${seasonInfo.name} (start: ${dateObj.toISOString().split('T')[0]})`);
   const [result] = await db.insert(seasons).values({
-    name,
-    startDate: new Date(startDate) as any,
-    status: 'active',
+    name: seasonInfo.name,
+    startDate: dateObj as any,
+    status: "active",
+    goal: 50
   });
 
-  return result.insertId;
+  return (result as any).insertId;
 }
 
 // Projection queries

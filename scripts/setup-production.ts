@@ -8,6 +8,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { users, seasons } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { getSeasonInfoForDate } from "../server/utils";
 
 async function setup() {
     if (!process.env.DATABASE_URL) {
@@ -56,17 +57,15 @@ async function setup() {
         if (!activeSeason) {
             console.log("🔧 Creating default season...");
             const now = new Date();
-            // Snowboard season runs Dec-Mar, so if we're before Dec, use previous year
-            const seasonYear = now.getMonth() < 11 ? now.getFullYear() - 1 : now.getFullYear();
-            const seasonName = `Season ${seasonYear + 1}`; // e.g., "Season 2026" for 2025-2026 season
-            const startDate = new Date(seasonYear, 11, 1); // December 1st of season year
+            const seasonInfo = getSeasonInfoForDate(now);
 
             await db.insert(seasons).values({
-                name: seasonName,
-                startDate: startDate,
+                name: seasonInfo.name,
+                startDate: new Date(seasonInfo.startDate),
                 status: "active",
+                goal: 50,
             });
-            console.log(`✅ Created season: ${seasonName}`);
+            console.log(`✅ Created season: ${seasonInfo.name}`);
         } else {
             console.log(`✅ Active season already exists: ${activeSeason.name}`);
         }
