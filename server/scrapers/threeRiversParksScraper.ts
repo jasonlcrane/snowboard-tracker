@@ -57,6 +57,10 @@ export async function scrapeThreeRiversParks(
       timeout: 60000
     });
 
+    // Wait for the login form to be ready
+    await page.waitForSelector('input[name="weblogin_username"]', { visible: true });
+    await page.waitForSelector('input[name="weblogin_password"]', { visible: true });
+
     // Fill in credentials
     await page.type('input[name="weblogin_username"]', username);
     await page.type('input[name="weblogin_password"]', password);
