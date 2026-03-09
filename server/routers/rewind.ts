@@ -165,9 +165,14 @@ export const rewindRouter = router({
             const avgDaysPerWeek = parseFloat((totalDays / weeksSpan).toFixed(2));
 
             // ── Hill breakdown ──────────────────────────────────────────────────
+            // Scraped entries (isManual=0) all come from the Three Rivers Parks /
+            // Hyland Hills scraper, so normalize them.  Manual entries (isManual=1)
+            // store the actual hill name the user selected in passType.
             const hillCounts: Record<string, number> = {};
             for (const b of allBadgeIns) {
-                const hill = b.passType || 'Unknown Hill';
+                const hill = b.isManual === 1
+                    ? (b.passType || 'Unknown Hill')
+                    : 'Hyland Hills';
                 hillCounts[hill] = (hillCounts[hill] || 0) + 1;
             }
             const hillBreakdown = Object.entries(hillCounts)
