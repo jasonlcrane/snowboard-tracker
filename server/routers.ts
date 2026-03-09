@@ -6,6 +6,7 @@ import { badgeRouter } from "./routers/badge";
 import { adminRouter } from "./routers/admin";
 import { manualRouter } from "./routers/manual";
 import { weatherRouter } from "./routers/weather";
+import { rewindRouter } from "./routers/rewind";
 
 export const appRouter = router({
   system: systemRouter,
@@ -23,6 +24,7 @@ export const appRouter = router({
   admin: adminRouter,
   manual: manualRouter,
   weather: weatherRouter,
+  rewind: rewindRouter,
 });
 
 export type AppRouter = typeof appRouter;

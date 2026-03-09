@@ -85,3 +85,48 @@
 - [x] Add error handling and logging
 - [x] Write tests for scraper (mocked)
 - [ ] Test scraper with real account (manual testing)
+
+
+## Season Rewind (Spotify Wrapped–Style Recap)
+
+> Full plan: `.gemini/artifacts/season_rewind_plan.md`
+
+### Phase 1: Backend
+- [x] Create `server/routers/rewind.ts` with `getSeasonRewind` procedure
+- [x] Aggregate stats: total days, hill breakdown, streaks, weather superlatives, goal progress, monthly breakdown, season score
+- [x] Register `rewindRouter` in `server/index.ts`
+
+### Phase 2: Page & Routing
+- [x] Create `SeasonRewind.tsx` page
+- [x] Add `/rewind` and `/rewind/:seasonId` routes in `App.tsx`
+
+### Phase 3: Card Deck UX (10 Cards)
+- [x] Opener card (season name, date range)
+- [x] Total Hill Days card (counter animation)
+- [x] Home Mountain card (hill breakdown donut)
+- [x] Biggest Streak card (consecutive weeks)
+- [x] Coldest Day card (weather data)
+- [x] Best Powder Day card (snowfall data)
+- [x] Day of Week card (distribution chart)
+- [x] Goal Tracker card (progress ring)
+- [x] Month-by-Month card (horizontal bars)
+- [x] Season Summary card (composite score + finale)
+- [x] Full-screen scroll-snap navigation + progress dots
+- [x] Framer Motion animations per card
+
+### Phase 4: Share Feature
+- [x] Canvas-to-PNG export of summary card
+- [x] Native share API or download fallback
+
+### Phase 5: Entry Points & Polish
+- [x] Dashboard promo card linking to `/rewind`
+- [x] Header nav link for Rewind
+
+### Future: Season Rewind Enhancements
+- [ ] Public shareable link (`/rewind/share/:token`) — anyone can view a read-only rewind without logging in
+- [ ] Burn site URL into the share image for brand awareness
+- [ ] Per-card image export — share individual stat cards as separate IG Story slides
+- [ ] Animated video export (Canvas + MediaRecorder + ffmpeg.wasm → MP4 for IG Reels)
+- [ ] Season selector — `/rewind/:seasonId` for viewing past seasons
+- [ ] Year-over-year comparison once 2+ seasons exist
+- [ ] Achievement badges ("Sub-Zero Hero", "Powder Hound", etc.)

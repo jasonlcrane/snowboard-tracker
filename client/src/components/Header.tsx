@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
-import { LogOut, Settings, LayoutDashboard, History, Plus, ShieldCheck } from "lucide-react";
+import { LogOut, Settings, LayoutDashboard, History, Plus, ShieldCheck, Clapperboard } from "lucide-react";
 import { ManualEntryDialog } from "./ManualEntryDialog";
 
 export function Header() {
@@ -49,6 +49,18 @@ export function Header() {
                             >
                                 <History className="w-4 h-4" />
                                 <span className="hidden md:inline">History</span>
+                            </Button>
+                        </Link>
+
+                        <Link href="/rewind">
+                            <Button
+                                variant={location === "/rewind" ? "secondary" : "ghost"}
+                                size="sm"
+                                className="gap-2 px-2 md:px-3"
+                                title="Season Rewind"
+                            >
+                                <Clapperboard className="w-4 h-4" />
+                                <span className="hidden md:inline">Rewind</span>
                             </Button>
                         </Link>
 

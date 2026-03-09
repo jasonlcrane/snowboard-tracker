@@ -12,6 +12,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Header } from "./components/Header";
 import { AutoSyncTrigger } from "./components/AutoSyncTrigger";
 import { SeasonProvider } from "./contexts/SeasonContext";
+import SeasonRewind from "./pages/SeasonRewind";
 
 function Router() {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/" component={() => (user ? <Dashboard /> : <LandingPage />)} />
       <Route path="/history" component={() => (user ? <HistoryPage /> : <LandingPage />)} />
       <Route path="/admin" component={() => (user?.role === 'admin' ? <Admin /> : <NotFound />)} />
+      <Route path="/rewind" component={() => (user ? <SeasonRewind /> : <LandingPage />)} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
