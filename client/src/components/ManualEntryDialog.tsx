@@ -133,8 +133,9 @@ export function ManualEntryDialog({ trigger }: { trigger?: React.ReactNode }) {
                         <CommandItem
                           key={option}
                           value={option}
-                          onSelect={(currentValue) => {
-                            setHill(currentValue === hill ? "" : currentValue);
+                          onSelect={() => {
+                            // cmdk v1 lowercases values in onSelect — use the original option directly
+                            setHill(hill === option ? "" : option);
                             setHillSearch("");
                             setPopoverOpen(false);
                           }}

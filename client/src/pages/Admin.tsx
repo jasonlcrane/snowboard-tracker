@@ -8,6 +8,79 @@ import { Loader2, Check, X, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide
 import { toast } from 'sonner';
 import { useSeason } from '@/contexts/SeasonContext';
 
+
+function HillCleanupSection() {
+  const [previewed, setPreviewed] = useState(false);
+  const { data: preview, refetch: refetchPreview, isLoading: previewLoading } = trpc.admin.previewHillCleanup.useQuery(undefined, { enabled: false });
+  const cleanupMutation = trpc.admin.cleanupHillNames.useMutation();
+
+  const handlePreview = async () => {
+    await refetchPreview();
+    setPreviewed(true);
+  };
+
+  const handleApply = async () => {
+    try {
+      const result = await cleanupMutation.mutateAsync();
+      toast.success(result.message);
+      setPreviewed(false);
+      // Re-fetch preview to show clean state
+      await refetchPreview();
+    } catch (error) {
+      toast.error('Cleanup failed');
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <Button variant="outline" onClick={handlePreview} disabled={previewLoading}>
+        {previewLoading ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : null}
+        Preview Changes
+      </Button>
+
+      {previewed && preview && (
+        <>
+          {preview.changes.length === 0 ? (
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-500" /> All hill names look clean — nothing to fix!
+            </div>
+          ) : (
+            <>
+              <div className="text-sm text-muted-foreground">{preview.message}</div>
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-medium">Date</th>
+                      <th className="text-left px-3 py-2 font-medium">Current</th>
+                      <th className="text-left px-3 py-2 font-medium">→</th>
+                      <th className="text-left px-3 py-2 font-medium">Fixed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.changes.map((c) => (
+                      <tr key={c.id} className="border-t border-border">
+                        <td className="px-3 py-1.5 text-muted-foreground">{c.date}</td>
+                        <td className="px-3 py-1.5 text-red-500 line-through">{c.from}</td>
+                        <td className="px-3 py-1.5">→</td>
+                        <td className="px-3 py-1.5 text-green-500 font-medium">{c.to}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Button onClick={handleApply} disabled={cleanupMutation.isPending}>
+                {cleanupMutation.isPending ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : null}
+                Apply {preview.changes.length} Fixes
+              </Button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Admin() {
   const { selectedSeasonId } = useSeason();
   const [username, setUsername] = useState('');
@@ -154,6 +227,19 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Hill Name Cleanup */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Hill Name Cleanup</CardTitle>
+          <CardDescription>
+            Fix entries like "Non-Hyland (Wild Mountain)" → "Wild Mountain" and normalize casing
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <HillCleanupSection />
+        </CardContent>
+      </Card>
 
       {/* Season Closure Section */}
       <Card className="border-red-500/20 bg-red-500/5">

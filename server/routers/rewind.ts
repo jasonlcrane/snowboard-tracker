@@ -170,9 +170,17 @@ export const rewindRouter = router({
             // store the actual hill name the user selected in passType.
             const hillCounts: Record<string, number> = {};
             for (const b of allBadgeIns) {
-                const hill = b.isManual === 1
-                    ? (b.passType || 'Unknown Hill')
-                    : 'Hyland Hills';
+                let hill: string;
+                if (b.isManual === 1) {
+                    const raw = b.passType || 'Unknown Hill';
+                    // Handle "Non-Hyland (Buck Hill)" → "Buck Hill"
+                    const parenMatch = raw.match(/\(([^)]+)\)/);
+                    hill = parenMatch ? parenMatch[1].trim() : raw;
+                    // Fix lowercased values from cmdk bug → Title Case
+                    hill = hill.replace(/\b\w/g, c => c.toUpperCase());
+                } else {
+                    hill = 'Hyland Hills';
+                }
                 hillCounts[hill] = (hillCounts[hill] || 0) + 1;
             }
             const hillBreakdown = Object.entries(hillCounts)
