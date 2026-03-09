@@ -1,21 +1,28 @@
-import { motion, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import type { CardProps } from '../types';
 import { formatRewindDate } from '../types';
 import { downloadShareImage } from '../ShareRenderer';
 
 function AnimatedScore({ value, isActive }: { value: number; isActive: boolean }) {
-    const spring = useSpring(0, { duration: 2000 });
-    const display = useTransform(spring, (v) => Math.round(v));
+    const motionVal = useMotionValue(0);
+    const rounded = useTransform(motionVal, (v) => Math.round(v));
     const [displayVal, setDisplayVal] = useState(0);
 
     useEffect(() => {
-        if (isActive) spring.set(value);
-    }, [isActive, value, spring]);
+        if (isActive) {
+            motionVal.set(0);
+            const controls = animate(motionVal, value, {
+                duration: 2.0,
+                ease: 'easeOut',
+            });
+            return () => controls.stop();
+        }
+    }, [isActive, value, motionVal]);
 
     useEffect(() => {
-        return display.on('change', (v) => setDisplayVal(v));
-    }, [display]);
+        return rounded.on('change', (v) => setDisplayVal(v));
+    }, [rounded]);
 
     return <span>{displayVal}</span>;
 }
