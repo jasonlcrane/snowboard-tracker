@@ -416,7 +416,15 @@ export async function addManualBadgeIn(data: InsertBadgeIn) {
     }
     throw new Error("Database not available");
   }
-  const result = await db.insert(badgeIns).values(data);
+  // Use onDuplicateKeyUpdate so re-submitting the same date updates
+  // the hill name and notes instead of failing on the unique index.
+  const result = await db.insert(badgeIns).values(data).onDuplicateKeyUpdate({
+    set: {
+      passType: data.passType,
+      notes: data.notes,
+      updatedAt: new Date(),
+    },
+  });
   return result;
 }
 
