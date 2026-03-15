@@ -64,20 +64,40 @@ export function OpenerCard({ data, isActive }: CardProps) {
                     </p>
                 </motion.div>
 
+                {/* App Logo with 3D spin effect */}
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={isActive ? { opacity: 1 } : {}}
-                    transition={{ duration: 0.8, delay: 1.5 }}
-                    className="mt-12"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={isActive ? { opacity: 1, scale: 1 } : {}}
+                    transition={{
+                        opacity: { duration: 0.6, delay: 1.2 },
+                        scale: { duration: 0.8, delay: 1.2, type: 'spring', bounce: 0.3 },
+                    }}
+                    className="mt-10"
+                    style={{ perspective: 800 }}
                 >
-                    <motion.span
-                        className="text-7xl inline-block"
-                        animate={isActive ? { y: [0, -10, 0] } : {}}
-                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                        🎿
-                    </motion.span>
+                    <motion.img
+                        src="/logo.png"
+                        alt="Season Rewind"
+                        className="w-52 h-52 md:w-64 md:h-64 mx-auto"
+                        style={{
+                            filter: 'drop-shadow(0 0 40px rgba(255,255,255,0.3))',
+                        }}
+                        animate={isActive ? {
+                            rotateY: [0, 360],
+                        } : { rotateY: 0 }}
+                        transition={{
+                            duration: 1.5,
+                            delay: 1.8,
+                            ease: [0.25, 0.1, 0.25, 1],
+                        }}
+                    />
                 </motion.div>
+
+                {/* Gentle floating after spin */}
+                <motion.div
+                    animate={isActive ? { y: [0, -8, 0] } : {}}
+                    transition={{ duration: 3, delay: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
             </div>
         </div>
     );

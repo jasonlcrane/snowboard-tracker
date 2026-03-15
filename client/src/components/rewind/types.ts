@@ -14,7 +14,7 @@ export interface RewindData {
     lastDay: string;
     hillBreakdown: { hill: string; count: number }[];
     favoriteHill: { hill: string; count: number };
-    longestStreak: { weeks: number; startDate: string; endDate: string };
+    longestStreak: { days: number; startDate: string; endDate: string };
     coldestDay: { date: string; tempLow: number; tempAvg: number } | null;
     bestPowderDay: { date: string; snowfall: number } | null;
     totalSnowfallOnHillDays: number;
@@ -25,6 +25,7 @@ export interface RewindData {
     busiestMonth: { month: string; count: number };
     tempSweetSpot: string;
     seasonScore: number;
+    badgeInDates: string[];
 }
 
 export interface CardProps {

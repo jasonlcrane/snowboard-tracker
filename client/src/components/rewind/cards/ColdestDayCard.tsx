@@ -2,8 +2,16 @@ import { motion } from 'framer-motion';
 import type { CardProps } from '../types';
 import { formatRewindDate } from '../types';
 
+function getColdBadge(tempLow: number): { text: string; emoji: string } {
+    if (tempLow <= 0) return { text: 'Absolute Zero Energy', emoji: '❄️' };
+    if (tempLow <= 10) return { text: 'Ice Mode Activated', emoji: '🧊' };
+    if (tempLow <= 20) return { text: 'Built Different', emoji: '🥶' };
+    return { text: 'Chilly but Worth It', emoji: '💨' };
+}
+
 export function ColdestDayCard({ data, isActive }: CardProps) {
     const coldest = data.coldestDay;
+    const badge = coldest ? getColdBadge(coldest.tempLow) : null;
 
     return (
         <div className="h-screen w-full flex items-center justify-center relative overflow-hidden"
@@ -42,7 +50,7 @@ export function ColdestDayCard({ data, isActive }: CardProps) {
                     transition={{ duration: 0.6, delay: 0.2 }}
                     className="text-white/50 text-lg tracking-wider uppercase mb-6"
                 >
-                    Bravest ride
+                    Coldest Ride
                 </motion.p>
 
                 {coldest ? (
@@ -64,15 +72,29 @@ export function ColdestDayCard({ data, isActive }: CardProps) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={isActive ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.6, delay: 1.0 }}
-                            className="text-white/70 text-xl font-light mb-8"
+                            className="text-white/70 text-xl font-light mb-4"
                         >
                             on {formatRewindDate(coldest.date)}
                         </motion.p>
 
+                        {/* Reactive cold badge */}
+                        {badge && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={isActive ? { opacity: 1, scale: 1 } : {}}
+                                transition={{ duration: 0.5, delay: 1.3, type: 'spring', bounce: 0.4 }}
+                                className="inline-block px-5 py-2.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/10 mb-6"
+                            >
+                                <span className="text-white/90 text-sm font-medium">
+                                    {badge.emoji} {badge.text}
+                                </span>
+                            </motion.div>
+                        )}
+
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={isActive ? { opacity: 1 } : {}}
-                            transition={{ duration: 0.6, delay: 1.4 }}
+                            transition={{ duration: 0.6, delay: 1.6 }}
                             className="flex flex-col gap-3 items-center"
                         >
                             <div className="px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-sm inline-block">
@@ -92,15 +114,6 @@ export function ColdestDayCard({ data, isActive }: CardProps) {
                         <p className="text-white/60 text-xl">No temperature data yet</p>
                     </motion.div>
                 )}
-
-                <motion.div
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={isActive ? { opacity: 1, scale: 1 } : {}}
-                    transition={{ duration: 0.5, delay: 1.8 }}
-                    className="text-6xl mt-8"
-                >
-                    🥶
-                </motion.div>
             </div>
         </div>
     );

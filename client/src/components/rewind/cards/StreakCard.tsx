@@ -28,7 +28,7 @@ function AnimatedNumber({ value, isActive }: { value: number; isActive: boolean 
 
 export function StreakCard({ data, isActive }: CardProps) {
     const streak = data.longestStreak;
-    const hasStreak = streak.weeks > 0;
+    const hasStreak = streak.days > 0;
 
     return (
         <div className="h-screen w-full flex items-center justify-center relative overflow-hidden"
@@ -82,7 +82,7 @@ export function StreakCard({ data, isActive }: CardProps) {
                         >
                             <span className="text-[100px] md:text-[140px] font-black text-white leading-none"
                                 style={{ textShadow: '0 0 60px rgba(234,88,12,0.5)' }}>
-                                <AnimatedNumber value={streak.weeks} isActive={isActive} />
+                                <AnimatedNumber value={streak.days} isActive={isActive} />
                             </span>
                         </motion.div>
 
@@ -92,7 +92,7 @@ export function StreakCard({ data, isActive }: CardProps) {
                             transition={{ duration: 0.6, delay: 1.0 }}
                             className="text-white/80 text-2xl font-light mb-8"
                         >
-                            {streak.weeks === 1 ? 'week' : 'weeks'} in a row
+                            {streak.days === 1 ? 'day' : 'days'} in a row
                         </motion.p>
 
                         <motion.div
@@ -112,8 +112,8 @@ export function StreakCard({ data, isActive }: CardProps) {
                         animate={isActive ? { opacity: 1, y: 0 } : {}}
                         transition={{ duration: 0.8, delay: 0.5 }}
                     >
-                        <p className="text-white/60 text-xl">Ride every week to build a streak!</p>
-                        <p className="text-6xl mt-6">🎿</p>
+                        <p className="text-white/60 text-xl">Ride every day to build a streak!</p>
+                        <p className="text-6xl mt-6">❄️</p>
                     </motion.div>
                 )}
             </div>

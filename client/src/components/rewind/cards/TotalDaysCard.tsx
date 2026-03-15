@@ -9,7 +9,6 @@ function AnimatedNumber({ value, isActive }: { value: number; isActive: boolean 
 
     useEffect(() => {
         if (isActive) {
-            // Always start from 0 and count up
             motionVal.set(0);
             const controls = animate(motionVal, value, {
                 duration: 1.5,
@@ -30,6 +29,33 @@ export function TotalDaysCard({ data, isActive }: CardProps) {
     return (
         <div className="h-screen w-full flex items-center justify-center relative overflow-hidden"
             style={{ background: 'linear-gradient(135deg, #1a1a6e 0%, #4338ca 50%, #3730a3 100%)' }}>
+
+            {/* Subtle ember particles */}
+            {isActive && Array.from({ length: 3 }).map((_, i) => (
+                <motion.div
+                    key={i}
+                    className="absolute pointer-events-none select-none"
+                    initial={{
+                        x: (typeof window !== 'undefined' ? window.innerWidth / 2 : 400) + (Math.random() - 0.5) * 160,
+                        y: typeof window !== 'undefined' ? window.innerHeight * 0.55 : 450,
+                        opacity: 0,
+                    }}
+                    animate={{
+                        y: typeof window !== 'undefined' ? window.innerHeight * 0.2 : 160,
+                        opacity: [0, 0.5, 0],
+                        scale: [0.6, 1, 0.4],
+                    }}
+                    transition={{
+                        duration: 3 + Math.random() * 2,
+                        delay: 1 + Math.random() * 3,
+                        repeat: Infinity,
+                        ease: 'easeOut',
+                    }}
+                    style={{ fontSize: 14 + Math.random() * 10 }}
+                >
+                    🔥
+                </motion.div>
+            ))}
 
             <div className="text-center z-10 px-8">
                 <motion.p

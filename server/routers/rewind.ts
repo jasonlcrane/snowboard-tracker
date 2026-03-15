@@ -3,7 +3,7 @@ import { publicProcedure, router } from '../_core/trpc';
 import { getBadgeInsBySeason, getActiveSeason, getWeatherRange, getDb } from '../db';
 import { badgeIns, weatherCache, seasons } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
-import { getWeeklyCounts } from '../utils';
+
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ export interface SeasonRewindData {
     lastDay: string;
     hillBreakdown: { hill: string; count: number }[];
     favoriteHill: { hill: string; count: number };
-    longestStreak: { weeks: number; startDate: string; endDate: string };
+    longestStreak: { days: number; startDate: string; endDate: string };
     coldestDay: { date: string; tempLow: number; tempAvg: number } | null;
     bestPowderDay: { date: string; snowfall: number } | null;
     totalSnowfallOnHillDays: number;
@@ -32,6 +32,7 @@ export interface SeasonRewindData {
     busiestMonth: { month: string; count: number };
     tempSweetSpot: string;
     seasonScore: number;
+    badgeInDates: string[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -41,20 +42,20 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
 
 /**
- * Find the longest consecutive-week streak from badge-in dates.
- * A "week" is any ISO week containing at least one badge-in.
+ * Find the longest consecutive-day streak from badge-in dates.
+ * A "day" is a unique calendar date with at least one badge-in.
  */
-function computeLongestStreak(badgeInDates: Date[]): { weeks: number; startDate: string; endDate: string } {
+function computeLongestDayStreak(badgeInDates: Date[]): { days: number; startDate: string; endDate: string } {
     if (badgeInDates.length === 0) {
-        return { weeks: 0, startDate: '', endDate: '' };
+        return { days: 0, startDate: '', endDate: '' };
     }
 
-    // Get week keys (start of week = Sunday) sorted chronologically
-    const weeklyMap = getWeeklyCounts(badgeInDates);
-    const weekKeys = Object.keys(weeklyMap).sort();
+    const uniqueDays = Array.from(new Set(
+        badgeInDates.map(d => d.toISOString().split('T')[0])
+    )).sort();
 
-    if (weekKeys.length === 0) {
-        return { weeks: 0, startDate: '', endDate: '' };
+    if (uniqueDays.length === 0) {
+        return { days: 0, startDate: '', endDate: '' };
     }
 
     let bestStart = 0;
@@ -62,12 +63,13 @@ function computeLongestStreak(badgeInDates: Date[]): { weeks: number; startDate:
     let curStart = 0;
     let curLen = 1;
 
-    for (let i = 1; i < weekKeys.length; i++) {
-        const prev = new Date(weekKeys[i - 1]);
-        const curr = new Date(weekKeys[i]);
-        const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
+    for (let i = 1; i < uniqueDays.length; i++) {
+        const prev = new Date(uniqueDays[i - 1] + 'T12:00:00');
+        const curr = new Date(uniqueDays[i] + 'T12:00:00');
+        const diffMs = curr.getTime() - prev.getTime();
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-        if (diffDays <= 7) {
+        if (diffDays === 1) {
             curLen++;
         } else {
             if (curLen > bestLen) {
@@ -85,9 +87,9 @@ function computeLongestStreak(badgeInDates: Date[]): { weeks: number; startDate:
     }
 
     return {
-        weeks: bestLen,
-        startDate: weekKeys[bestStart],
-        endDate: weekKeys[bestStart + bestLen - 1],
+        days: bestLen,
+        startDate: uniqueDays[bestStart],
+        endDate: uniqueDays[bestStart + bestLen - 1],
     };
 }
 
@@ -97,14 +99,14 @@ function computeLongestStreak(badgeInDates: Date[]): { weeks: number; startDate:
 function computeSeasonScore(
     totalDays: number,
     goal: number,
-    streakWeeks: number,
+    streakDays: number,
     uniqueHills: number,
     coldDaysBelow10: number,
     powderDays: number,
     activeMonths: number,
 ): number {
     const goalPts = Math.min(40, Math.round((totalDays / Math.max(1, goal)) * 40));
-    const streakPts = Math.min(15, streakWeeks * 3);
+    const streakPts = Math.min(15, streakDays * 5);
     const varietyPts = Math.min(15, uniqueHills * 5);
     const braveryPts = Math.min(10, coldDaysBelow10 * 2);
     const powderPts = Math.min(10, powderDays * 2);
@@ -189,7 +191,7 @@ export const rewindRouter = router({
             const favoriteHill = hillBreakdown[0] || { hill: 'Unknown', count: 0 };
 
             // ── Longest streak ──────────────────────────────────────────────────
-            const longestStreak = computeLongestStreak(badgeInDates);
+            const longestStreak = computeLongestDayStreak(badgeInDates);
 
             // ── Weather superlatives ────────────────────────────────────────────
             let coldestDay: SeasonRewindData['coldestDay'] = null;
@@ -288,7 +290,7 @@ export const rewindRouter = router({
             const uniqueHills = hillBreakdown.length;
             const activeMonths = monthlyBreakdown.length;
             const seasonScore = computeSeasonScore(
-                totalDays, goal, longestStreak.weeks, uniqueHills,
+                totalDays, goal, longestStreak.days, uniqueHills,
                 coldDaysBelow10, powderDaysCount, activeMonths,
             );
 
@@ -318,6 +320,7 @@ export const rewindRouter = router({
                 busiestMonth,
                 tempSweetSpot,
                 seasonScore,
+                badgeInDates: sortedDates.map(d => d.toISOString().split('T')[0]),
             };
         }),
 });

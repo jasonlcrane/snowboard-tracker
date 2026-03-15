@@ -31,7 +31,6 @@ export function GoalTrackerCard({ data, isActive }: CardProps) {
     const circumference = 2 * Math.PI * radius;
     const pct = Math.min(goalProgress.percentage, 100) / 100;
 
-    // Choose colors based on goal status
     const bgGradient = goalProgress.met
         ? 'linear-gradient(135deg, #064e3b 0%, #059669 50%, #10b981 100%)'
         : 'linear-gradient(135deg, #78350f 0%, #d97706 50%, #f59e0b 100%)';
@@ -42,6 +41,34 @@ export function GoalTrackerCard({ data, isActive }: CardProps) {
     return (
         <div className="h-screen w-full flex items-center justify-center relative overflow-hidden"
             style={{ background: bgGradient }}>
+
+            {/* Fire burst when goal is met */}
+            {isActive && goalProgress.met && Array.from({ length: 3 }).map((_, i) => (
+                <motion.div
+                    key={i}
+                    className="absolute pointer-events-none select-none"
+                    initial={{
+                        x: (typeof window !== 'undefined' ? window.innerWidth / 2 : 400) + (Math.random() - 0.5) * 180,
+                        y: typeof window !== 'undefined' ? window.innerHeight * 0.5 : 400,
+                        opacity: 0,
+                        scale: 0.5,
+                    }}
+                    animate={{
+                        y: typeof window !== 'undefined' ? window.innerHeight * 0.15 : 120,
+                        opacity: [0, 0.6, 0],
+                        scale: [0.5, 1.1, 0],
+                    }}
+                    transition={{
+                        duration: 2.5 + Math.random() * 2,
+                        delay: 2 + Math.random() * 2,
+                        repeat: Infinity,
+                        ease: 'easeOut',
+                    }}
+                    style={{ fontSize: 16 + Math.random() * 12 }}
+                >
+                    🔥
+                </motion.div>
+            ))}
 
             <div className="text-center z-10 px-8">
                 <motion.p
@@ -61,9 +88,7 @@ export function GoalTrackerCard({ data, isActive }: CardProps) {
                     className="relative inline-block mb-8"
                 >
                     <svg width="220" height="220" viewBox="0 0 220 220">
-                        {/* Track */}
                         <circle cx="110" cy="110" r={radius} fill="none" stroke={ringTrack} strokeWidth="12" />
-                        {/* Progress */}
                         <motion.circle
                             cx="110" cy="110" r={radius}
                             fill="none"
@@ -77,7 +102,6 @@ export function GoalTrackerCard({ data, isActive }: CardProps) {
                             transition={{ duration: 1.5, delay: 0.8, ease: 'easeOut' }}
                         />
                     </svg>
-                    {/* Center text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <span className="text-5xl font-black text-white">
                             <AnimatedPercentage value={goalProgress.percentage} isActive={isActive} />

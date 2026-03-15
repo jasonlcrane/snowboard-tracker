@@ -1,62 +1,39 @@
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useState } from 'react';
 import type { CardProps } from '../types';
-import { formatRewindDate } from '../types';
+import type { RewindData } from '../types';
 import { downloadShareImage } from '../ShareRenderer';
 
-function AnimatedScore({ value, isActive }: { value: number; isActive: boolean }) {
-    const motionVal = useMotionValue(0);
-    const rounded = useTransform(motionVal, (v) => Math.round(v));
-    const [displayVal, setDisplayVal] = useState(0);
+function getRiderTitle(data: RewindData): string {
+    const totalDays = data.totalDays;
+    const streakDays = data.longestStreak.days;
+    const coldestTemp = data.coldestDay?.tempLow ?? 50;
+    const powderSnow = data.bestPowderDay?.snowfall ?? 0;
+    const goalMet = data.goalProgress.met;
 
-    useEffect(() => {
-        if (isActive) {
-            motionVal.set(0);
-            const controls = animate(motionVal, value, {
-                duration: 2.0,
-                ease: 'easeOut',
-            });
-            return () => controls.stop();
-        }
-    }, [isActive, value, motionVal]);
+    if (goalMet) return 'Goal Crusher';
 
-    useEffect(() => {
-        return rounded.on('change', (v) => setDisplayVal(v));
-    }, [rounded]);
+    const dayScore = totalDays >= 40 ? 3 : totalDays >= 25 ? 2 : totalDays >= 15 ? 1 : 0;
+    const streakScore = streakDays >= 4 ? 3 : streakDays >= 3 ? 2 : streakDays >= 2 ? 1 : 0;
+    const coldScore = coldestTemp <= 0 ? 3 : coldestTemp <= 10 ? 2 : coldestTemp <= 20 ? 1 : 0;
+    const powderScore = powderSnow >= 6 ? 3 : powderSnow >= 3 ? 2 : powderSnow >= 1 ? 1 : 0;
 
-    return <span>{displayVal}</span>;
-}
+    const traits = [
+        { score: dayScore, title: 'Hill Addict' },
+        { score: streakScore, title: 'Streak Master' },
+        { score: coldScore, title: 'Ice Rider' },
+        { score: powderScore, title: 'Powder Hound' },
+    ];
 
-function getScoreLabel(score: number): string {
-    if (score >= 90) return 'Legendary Season';
-    if (score >= 75) return 'Epic Season';
-    if (score >= 60) return 'Solid Season';
-    if (score >= 40) return 'Getting There';
-    return 'Just Getting Started';
-}
-
-function getScoreEmoji(score: number): string {
-    if (score >= 90) return '🏆';
-    if (score >= 75) return '⭐';
-    if (score >= 60) return '🎿';
-    if (score >= 40) return '💪';
-    return '🌱';
+    const dominant = traits.sort((a, b) => b.score - a.score)[0];
+    if (dominant.score === 0) return 'Rising Rider';
+    return dominant.title;
 }
 
 export function SummaryCard({ data, isActive }: CardProps) {
-    const scoreLabel = getScoreLabel(data.seasonScore);
-    const scoreEmoji = getScoreEmoji(data.seasonScore);
+    const riderTitle = getRiderTitle(data);
     const [isSharing, setIsSharing] = useState(false);
     const [shareStatus, setShareStatus] = useState<string | null>(null);
-
-    const highlights = [
-        { label: 'Hill Days', value: `${data.totalDays}`, icon: '🎿' },
-        { label: 'Favorite Hill', value: data.favoriteHill.hill, icon: '🏔️' },
-        { label: 'Best Streak', value: `${data.longestStreak.weeks} weeks`, icon: '🔥' },
-        ...(data.coldestDay ? [{ label: 'Coldest Ride', value: `${data.coldestDay.tempLow}°F`, icon: '🥶' }] : []),
-        ...(data.bestPowderDay ? [{ label: 'Best Powder', value: `${data.bestPowderDay.snowfall}"`, icon: '🌨️' }] : []),
-        { label: 'Favorite Day', value: data.favoriteDayOfWeek.day, icon: '📅' },
-    ];
 
     const handleShareImage = async () => {
         setIsSharing(true);
@@ -74,13 +51,11 @@ export function SummaryCard({ data, isActive }: CardProps) {
     };
 
     const handleCopyText = async () => {
-        const text = `🎿 My Season Rewind: ${data.season.name}\n\n` +
-            `📊 Season Score: ${data.seasonScore}/100 — ${scoreLabel}\n` +
-            `🎿 ${data.totalDays} hill days\n` +
+        const text = `🏂 My Season Rewind: ${data.season.name}\n\n` +
+            `${riderTitle}\n` +
+            `🗓️ ${data.totalDays} hill days\n` +
             `🏔️ Favorite: ${data.favoriteHill.hill}\n` +
-            `🔥 ${data.longestStreak.weeks}-week streak\n` +
-            (data.coldestDay ? `🥶 Coldest: ${data.coldestDay.tempLow}°F\n` : '') +
-            (data.bestPowderDay ? `🌨️ Best powder: ${data.bestPowderDay.snowfall}"\n` : '') +
+            `🔥 ${data.longestStreak.days}-day streak\n` +
             `\nSee you next season! ❄️`;
 
         try {
@@ -97,10 +72,10 @@ export function SummaryCard({ data, isActive }: CardProps) {
             style={{ background: 'linear-gradient(135deg, #78350f 0%, #b45309 30%, #1e3a5f 70%, #0f172a 100%)' }}>
 
             {/* Sparkle particles */}
-            {isActive && Array.from({ length: 15 }).map((_, i) => (
+            {isActive && Array.from({ length: 10 }).map((_, i) => (
                 <motion.div
                     key={i}
-                    className="absolute pointer-events-none select-none text-yellow-300/60"
+                    className="absolute pointer-events-none select-none text-yellow-300/40"
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{
                         opacity: [0, 1, 0],
@@ -122,61 +97,70 @@ export function SummaryCard({ data, isActive }: CardProps) {
             ))}
 
             <div className="text-center z-10 px-6 w-full max-w-md">
-                {/* Season Score */}
+                {/* App logo */}
+                <motion.img
+                    src="/logo.png"
+                    alt=""
+                    initial={{ opacity: 0, rotateY: 0 }}
+                    animate={isActive ? { opacity: 1, rotateY: 360 } : {}}
+                    transition={{
+                        opacity: { duration: 0.5, delay: 0.3 },
+                        rotateY: { duration: 1.2, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+                    }}
+                    className="w-28 h-28 mx-auto mb-4"
+                    style={{
+                        filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.25))',
+                        perspective: 800,
+                    }}
+                />
+
+                {/* Rider Title */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={isActive ? { opacity: 1, scale: 1 } : {}}
-                    transition={{ duration: 1.0, delay: 0.3, type: 'spring', bounce: 0.3 }}
-                    className="mb-6"
+                    transition={{ duration: 1.0, delay: 0.8, type: 'spring', bounce: 0.3 }}
+                    className="mb-8"
                 >
-                    <p className="text-white/40 text-sm tracking-[0.3em] uppercase mb-2">Season Score</p>
-                    <div className="text-[80px] md:text-[100px] font-black text-white leading-none"
-                        style={{ textShadow: '0 0 60px rgba(251,191,36,0.4)' }}>
-                        <AnimatedScore value={data.seasonScore} isActive={isActive} />
-                    </div>
-                    <p className="text-amber-200/80 text-lg font-light mt-1">{scoreEmoji} {scoreLabel}</p>
+                    <h2 className="text-4xl md:text-5xl font-black text-white mb-2"
+                        style={{ textShadow: '0 0 40px rgba(251,191,36,0.3)' }}>
+                        {riderTitle}
+                    </h2>
+                    <p className="text-white/30 text-sm tracking-[0.2em] uppercase">{data.season.name}</p>
                 </motion.div>
 
-                {/* Highlight grid */}
+                {/* 3 key stats in a row */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={isActive ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.8, delay: 1.2 }}
-                    className="grid grid-cols-2 gap-2 mb-6"
+                    transition={{ duration: 0.8, delay: 1.4 }}
+                    className="flex justify-center gap-6 mb-12"
                 >
-                    {highlights.map((h, i) => (
+                    {[
+                        { value: `${data.totalDays}`, label: 'Days', icon: '🗓️' },
+                        { value: `${data.longestStreak.days}`, label: 'Day Streak', icon: '🔥' },
+                        { value: data.favoriteHill.hill, label: 'Top Hill', icon: '🏔️' },
+                    ].map((stat, i) => (
                         <motion.div
-                            key={h.label}
-                            initial={{ opacity: 0, y: 10 }}
+                            key={stat.label}
+                            initial={{ opacity: 0, y: 15 }}
                             animate={isActive ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.4, delay: 1.4 + i * 0.1 }}
-                            className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-3 text-left"
+                            transition={{ duration: 0.4, delay: 1.6 + i * 0.15 }}
+                            className="flex-1 text-center"
                         >
-                            <p className="text-lg mb-0.5">{h.icon}</p>
-                            <p className="text-white font-bold text-sm truncate">{h.value}</p>
-                            <p className="text-white/40 text-xs">{h.label}</p>
+                            <p className="text-lg mb-1">{stat.icon}</p>
+                            <p className="text-white font-bold text-lg truncate">{stat.value}</p>
+                            <p className="text-white/35 text-xs">{stat.label}</p>
                         </motion.div>
                     ))}
                 </motion.div>
-
-                {/* Date range */}
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={isActive ? { opacity: 1 } : {}}
-                    transition={{ duration: 0.6, delay: 2.0 }}
-                    className="text-white/30 text-sm mb-6"
-                >
-                    {formatRewindDate(data.firstDay)} → {formatRewindDate(data.lastDay)}
-                </motion.p>
 
                 {/* Share buttons */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={isActive ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.6, delay: 2.3 }}
-                    className="flex flex-col items-center gap-3"
+                    transition={{ duration: 0.6, delay: 2.2 }}
+                    className="flex flex-col items-center gap-3 mb-8"
                 >
-                    {/* Primary: Share as Image */}
                     <button
                         onClick={handleShareImage}
                         disabled={isSharing}
@@ -198,7 +182,6 @@ export function SummaryCard({ data, isActive }: CardProps) {
                         )}
                     </button>
 
-                    {/* Secondary: Copy text */}
                     <button
                         onClick={handleCopyText}
                         className="px-6 py-2 text-white/40 hover:text-white/70 text-sm transition-colors"
@@ -206,7 +189,6 @@ export function SummaryCard({ data, isActive }: CardProps) {
                         📋 Copy Stats as Text
                     </button>
 
-                    {/* Status message */}
                     {shareStatus && (
                         <motion.p
                             initial={{ opacity: 0, y: 5 }}
@@ -222,8 +204,8 @@ export function SummaryCard({ data, isActive }: CardProps) {
                 <motion.p
                     initial={{ opacity: 0 }}
                     animate={isActive ? { opacity: 1 } : {}}
-                    transition={{ duration: 0.8, delay: 2.8 }}
-                    className="mt-6 text-white/30 text-sm"
+                    transition={{ duration: 0.8, delay: 2.6 }}
+                    className="text-white/25 text-sm"
                 >
                     See you next season! ❄️
                 </motion.p>

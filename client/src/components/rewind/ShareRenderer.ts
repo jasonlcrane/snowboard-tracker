@@ -3,6 +3,32 @@ import type { RewindData } from './types';
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1920;
 
+function getRiderTitle(data: RewindData): string {
+    const totalDays = data.totalDays;
+    const streakDays = data.longestStreak.days;
+    const coldestTemp = data.coldestDay?.tempLow ?? 50;
+    const powderSnow = data.bestPowderDay?.snowfall ?? 0;
+    const goalMet = data.goalProgress.met;
+
+    if (goalMet) return 'Goal Crusher';
+
+    const dayScore = totalDays >= 40 ? 3 : totalDays >= 25 ? 2 : totalDays >= 15 ? 1 : 0;
+    const streakScore = streakDays >= 4 ? 3 : streakDays >= 3 ? 2 : streakDays >= 2 ? 1 : 0;
+    const coldScore = coldestTemp <= 0 ? 3 : coldestTemp <= 10 ? 2 : coldestTemp <= 20 ? 1 : 0;
+    const powderScore = powderSnow >= 6 ? 3 : powderSnow >= 3 ? 2 : powderSnow >= 1 ? 1 : 0;
+
+    const traits = [
+        { score: dayScore, title: 'Hill Addict' },
+        { score: streakScore, title: 'Streak Master' },
+        { score: coldScore, title: 'Ice Rider' },
+        { score: powderScore, title: 'Powder Hound' },
+    ];
+
+    const dominant = traits.sort((a, b) => b.score - a.score)[0];
+    if (dominant.score === 0) return 'Rising Rider';
+    return dominant.title;
+}
+
 /**
  * Renders the Season Rewind summary as a beautiful canvas image
  * optimized for phone screens and social media stories.
@@ -22,16 +48,18 @@ export async function renderShareImage(data: RewindData): Promise<Blob> {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // ── Load logo ────────────────────────────────────────────────────────
+    const logo = await loadImage('/logo.png');
+
     // ── Decorative elements ──────────────────────────────────────────────
-    // Subtle radial glow behind score
     const glow = ctx.createRadialGradient(
-        CANVAS_WIDTH / 2, 480, 0,
-        CANVAS_WIDTH / 2, 480, 350
+        CANVAS_WIDTH / 2, 420, 0,
+        CANVAS_WIDTH / 2, 420, 350
     );
-    glow.addColorStop(0, 'rgba(251, 191, 36, 0.12)');
+    glow.addColorStop(0, 'rgba(251, 191, 36, 0.10)');
     glow.addColorStop(1, 'rgba(251, 191, 36, 0)');
     ctx.fillStyle = glow;
-    ctx.fillRect(0, 130, CANVAS_WIDTH, 700);
+    ctx.fillRect(0, 100, CANVAS_WIDTH, 700);
 
     // Scattered snowflakes
     ctx.font = '24px serif';
@@ -65,51 +93,42 @@ export async function renderShareImage(data: RewindData): Promise<Blob> {
     ctx.font = '300 28px system-ui, -apple-system, sans-serif';
     ctx.fillText(data.season.name, CANVAS_WIDTH / 2, 310);
 
-    // ── Season Score (hero element) ───────────────────────────────────────
-    // Score ring
+    // ── Rider Title (replaces Season Score) ───────────────────────────────
+    const riderTitle = getRiderTitle(data);
     const cx = CANVAS_WIDTH / 2;
-    const cy = 500;
-    const radius = 130;
 
-    // Ring track
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(251, 191, 36, 0.15)';
-    ctx.lineWidth = 14;
-    ctx.stroke();
+    // App logo
+    if (logo) {
+        const logoSize = 160;
+        ctx.save();
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.25)';
+        ctx.shadowBlur = 40;
+        ctx.drawImage(logo, cx - logoSize / 2, 340, logoSize, logoSize);
+        ctx.restore();
+    }
 
-    // Ring progress
-    const pct = Math.min(data.seasonScore / 100, 1);
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth = 14;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-    ctx.lineCap = 'butt';
-
-    // Score number
+    // Rider title
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 96px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(data.seasonScore), cx, cy - 8);
+    ctx.fillText(riderTitle, cx, 550);
 
-    // "/ 100" label
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.font = '300 24px system-ui, -apple-system, sans-serif';
-    ctx.fillText('/ 100', cx, cy + 45);
-    ctx.textBaseline = 'alphabetic';
-
-    // Score label
-    const scoreLabel = getScoreLabel(data.seasonScore);
-    ctx.fillStyle = 'rgba(251, 191, 36, 0.8)';
-    ctx.font = '500 28px system-ui, -apple-system, sans-serif';
-    ctx.fillText(scoreLabel, cx, cy + radius + 50);
+    // Decorative line under title
+    const lineY = 595;
+    const lineGrad1 = ctx.createLinearGradient(cx - 150, lineY, cx + 150, lineY);
+    lineGrad1.addColorStop(0, 'rgba(251,191,36,0)');
+    lineGrad1.addColorStop(0.5, 'rgba(251,191,36,0.3)');
+    lineGrad1.addColorStop(1, 'rgba(251,191,36,0)');
+    ctx.strokeStyle = lineGrad1;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 150, lineY);
+    ctx.lineTo(cx + 150, lineY);
+    ctx.stroke();
 
     // ── Stats grid ────────────────────────────────────────────────────────
     const stats = buildStatsList(data);
-    const gridTop = 740;
+    const gridTop = 650;
     const cardWidth = 460;
     const cardHeight = 130;
     const gap = 24;
@@ -126,21 +145,30 @@ export async function renderShareImage(data: RewindData): Promise<Blob> {
         roundRect(ctx, x, y, cardWidth, cardHeight, 20);
         ctx.fill();
 
-        // Emoji
-        ctx.font = '36px serif';
-        ctx.textAlign = 'left';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(stats[i].icon, x + 24, y + 50);
+        // Accent bar at top
+        ctx.fillStyle = stats[i].accentColor || 'rgba(255,255,255,0.15)';
+        roundRect(ctx, x, y, cardWidth, 3, 20);
+        ctx.fill();
+
+        // Icon — use logo for Hill Days card, emoji for others
+        if (stats[i].label === 'Total Hill Days' && logo) {
+            ctx.drawImage(logo, x + 20, y + 28, 36, 36);
+        } else {
+            ctx.font = '36px serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(stats[i].icon, x + 24, y + 55);
+        }
 
         // Value
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 30px system-ui, -apple-system, sans-serif';
-        ctx.fillText(stats[i].value, x + 80, y + 50);
+        ctx.fillText(stats[i].value, x + 80, y + 55);
 
         // Label
         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
         ctx.font = '300 22px system-ui, -apple-system, sans-serif';
-        ctx.fillText(stats[i].label, x + 80, y + 90);
+        ctx.fillText(stats[i].label, x + 80, y + 95);
     }
 
     // ── Date range ────────────────────────────────────────────────────────
@@ -188,6 +216,17 @@ export async function renderShareImage(data: RewindData): Promise<Blob> {
 
 // ─── Utilities ─────────────────────────────────────────────────────────────
 
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+}
+
+
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -202,14 +241,6 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
     ctx.closePath();
 }
 
-function getScoreLabel(score: number): string {
-    if (score >= 90) return '🏆 Legendary Season';
-    if (score >= 75) return '⭐ Epic Season';
-    if (score >= 60) return '🎿 Solid Season';
-    if (score >= 40) return '💪 Getting There';
-    return '🌱 Just Getting Started';
-}
-
 function formatDate(dateStr: string): string {
     const d = new Date(dateStr + 'T12:00:00');
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -219,27 +250,28 @@ interface StatItem {
     icon: string;
     value: string;
     label: string;
+    accentColor?: string;
 }
 
 function buildStatsList(data: RewindData): StatItem[] {
     const stats: StatItem[] = [
-        { icon: '🎿', value: `${data.totalDays} days`, label: 'Total Hill Days' },
-        { icon: '🏔️', value: data.favoriteHill.hill, label: `${data.favoriteHill.count} visits` },
-        { icon: '🔥', value: `${data.longestStreak.weeks} weeks`, label: 'Longest Streak' },
-        { icon: '📅', value: `${data.favoriteDayOfWeek.day}s`, label: 'Favorite Day' },
+        { icon: '🗓️', value: `${data.totalDays} days`, label: 'Total Hill Days', accentColor: 'rgba(129,140,248,0.5)' },
+        { icon: '🏔️', value: data.favoriteHill.hill, label: `${data.favoriteHill.count} visits`, accentColor: 'rgba(52,211,153,0.5)' },
+        { icon: '🔥', value: `${data.longestStreak.days} days`, label: 'Longest Streak', accentColor: 'rgba(251,146,60,0.5)' },
+        { icon: '📅', value: `${data.favoriteDayOfWeek.day}s`, label: 'Favorite Day', accentColor: 'rgba(167,139,250,0.5)' },
     ];
 
     if (data.coldestDay) {
-        stats.push({ icon: '🥶', value: `${data.coldestDay.tempLow}°F`, label: 'Coldest Ride' });
+        stats.push({ icon: '🥶', value: `${data.coldestDay.tempLow}°F`, label: 'Coldest Ride', accentColor: 'rgba(148,163,184,0.5)' });
     }
 
     if (data.bestPowderDay) {
-        stats.push({ icon: '🌨️', value: `${data.bestPowderDay.snowfall}"`, label: 'Best Powder Day' });
+        stats.push({ icon: '🌨️', value: `${data.bestPowderDay.snowfall}"`, label: 'Best Powder Day', accentColor: 'rgba(226,232,240,0.5)' });
     }
 
     // Ensure even number for 2-column grid
     if (stats.length % 2 !== 0) {
-        stats.push({ icon: '📊', value: `${data.avgDaysPerWeek}/wk`, label: 'Avg Rate' });
+        stats.push({ icon: '📊', value: `${data.avgDaysPerWeek}/wk`, label: 'Avg Rate', accentColor: 'rgba(251,191,36,0.5)' });
     }
 
     return stats;
@@ -257,7 +289,7 @@ export async function downloadShareImage(data: RewindData): Promise<void> {
         try {
             await navigator.share({
                 title: 'My Season Rewind',
-                text: `🎿 Season Score: ${data.seasonScore}/100 — ${data.totalDays} hill days this season!`,
+                text: `🏂 ${getRiderTitle(data)} — ${data.totalDays} hill days this season!`,
                 files: [file],
             });
             return;
